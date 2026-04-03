@@ -23,6 +23,17 @@ endif()
 juce_add_binary_data(NovaSpace_WebUI
     SOURCES
         Source/ui/public/index.html
+        Assets/background.png
+        Assets/knob_generic.png
+        Assets/meters.png
+        Assets/studio_button_freeze_off.png
+        Assets/studio_button_freeze_on.png
+        Assets/arena_button_freeze_off.png
+        Assets/arena_button_freeze_on.png
+        Assets/dream_button_freeze_off.png
+        Assets/dream_button_freeze_on.png
+        Assets/vintage_button_freeze_off.png
+        Assets/vintage_button_freeze_on.png
 )
 
 juce_add_plugin(NovaSpace

@@ -5,208 +5,203 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nova Space</title>
     <style>
-        :root {
-            --bg-main: #efe6d8;
-            --bg-panel: rgba(255, 249, 241, 0.98);
-            --panel-shadow: rgba(76, 52, 24, 0.14);
-            --text-primary: #20160d;
-            --text-secondary: #6c5844;
-            --accent-gold: #b98934;
-            --accent-soft: #e3c27a;
-            --accent-outline: #d9c9af;
-            --accent-selected: #a5711e;
-            --hero-ring: #f4d79f;
-        }
-
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         html, body {
-            margin: 0;
             width: 820px;
             height: 560px;
-            overflow: hidden;
-            background:
-                radial-gradient(circle at top, rgba(255, 247, 234, 0.92), transparent 46%),
-                linear-gradient(180deg, #f7f0e3 0%, #efe6d8 100%);
             font-family: "Avenir Next", "Segoe UI", sans-serif;
-            color: var(--text-primary);
             user-select: none;
+            overflow: hidden;
         }
 
         body {
-            padding: 24px;
+            background: url('background.png') no-repeat center/cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .shell {
+            position: relative;
             width: 100%;
             height: 100%;
-            border-radius: 32px;
-            padding: 20px 28px;
-            background: linear-gradient(180deg, rgba(255, 251, 245, 0.98), rgba(247, 238, 225, 0.98));
-            box-shadow: 0 28px 60px var(--panel-shadow), inset 0 1px 0 rgba(255,255,255,0.8);
-            border: 1px solid rgba(185, 137, 52, 0.22);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            overflow: hidden;
         }
 
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: end;
+            position: absolute;
+            top: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
         }
 
         .title {
-            font-family: Baskerville, "Palatino Linotype", serif;
-            font-size: 30px;
-            letter-spacing: 0.08em;
+            font-size: 32px;
+            letter-spacing: 0.12em;
+            color: #b8860b;
+            font-weight: bold;
         }
 
-        .subtitle,
-        .mode-label {
-            color: var(--text-secondary);
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.18em;
+        .subtitle {
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            color: #888;
+            margin-top: 4px;
         }
 
-        .knob-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-        }
-
-        .hero {
-            display: grid;
-            place-items: center;
-            min-height: 180px;
+        .controls {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 40px;
         }
 
         .knob-card {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+        }
+
+        .knob {
+            width: 100px;
+            height: 100px;
+            background-image: url('knob_generic.png');
+            background-size: 100px 10000px;
+            background-position: center top;
+            cursor: ns-resize;
+            touch-action: none;
+            -webkit-user-drag: none;
+            position: relative;
+        }
+
+        .knob.large {
+            width: 140px;
+            height: 140px;
+            background-size: 140px 14000px;
         }
 
         .knob-label {
             font-size: 10px;
-            letter-spacing: 0.16em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
-            color: var(--text-secondary);
+            color: #666;
         }
-
-        .knob {
-            border-radius: 50%;
-            position: relative;
-            background: radial-gradient(circle at 35% 30%, #fffef9 0%, #f6ead7 55%, #ebdcc5 100%);
-            border: 1px solid rgba(185, 137, 52, 0.32);
-            box-shadow: inset 0 2px 8px rgba(255,255,255,0.9), inset 0 -8px 18px rgba(128, 90, 28, 0.08), 0 10px 20px rgba(80, 53, 20, 0.12);
-            cursor: ns-resize;
-            touch-action: none;
-            -webkit-user-drag: none;
-        }
-
-        .knob::before {
-            content: "";
-            position: absolute;
-            inset: 8%;
-            border-radius: 50%;
-            border: 8px solid transparent;
-            border-top-color: var(--accent-gold);
-            transform: rotate(var(--rotation, -120deg));
-        }
-
-        .knob::after {
-            content: "";
-            position: absolute;
-            width: 14px;
-            height: 14px;
-            left: calc(50% - 7px);
-            top: 18px;
-            border-radius: 50%;
-            background: linear-gradient(180deg, var(--accent-soft), var(--accent-gold));
-            box-shadow: 0 0 0 2px rgba(255,255,255,0.7);
-            transform: rotate(var(--rotation, -120deg)) translateY(-8px);
-            transform-origin: center 74px;
-        }
-
-        .knob.small { width: 100px; height: 100px; }
-        .knob.large { width: 160px; height: 160px; box-shadow: inset 0 2px 10px rgba(255,255,255,0.94), inset 0 -10px 22px rgba(128, 90, 28, 0.08), 0 18px 30px rgba(80, 53, 20, 0.16); }
-        .knob.large::before { border-width: 11px; border-top-color: var(--hero-ring); }
 
         .value {
-            font-variant-numeric: tabular-nums;
-            font-size: 13px;
-            color: var(--text-primary);
+            font-size: 12px;
+            color: #333;
+            font-weight: 500;
+            min-width: 50px;
+            text-align: center;
         }
 
-        .modes {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+        .hero {
+            position: absolute;
+            top: 220px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             gap: 12px;
         }
 
-        .mode {
-            border: 1px solid rgba(185, 137, 52, 0.24);
-            border-radius: 16px;
-            padding: 12px 12px;
-            background: rgba(255, 250, 242, 0.92);
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            font-size: 11px;
-            cursor: pointer;
+        .stereo-meter {
+            width: 200px;
+            height: 8px;
+            background-image: url('meters.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
         }
 
-        .mode.active {
-            background: linear-gradient(180deg, var(--accent-soft), var(--accent-gold));
-            color: #fff8ef;
-            box-shadow: 0 8px 18px rgba(165, 113, 30, 0.24);
+        .modes {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 16px;
         }
+
+        .mode-btn {
+            width: 100px;
+            height: 45px;
+            border: none;
+            cursor: pointer;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #333;
+            text-shadow: 0 1px 1px rgba(255,255,255,0.8);
+        }
+
+        .mode-btn[data-mode="studio"] { background-image: url('studio_button_freeze_off.png'); }
+        .mode-btn[data-mode="studio"].active { background-image: url('studio_button_freeze_on.png'); }
+
+        .mode-btn[data-mode="arena"] { background-image: url('arena_button_freeze_off.png'); }
+        .mode-btn[data-mode="arena"].active { background-image: url('arena_button_freeze_on.png'); }
+
+        .mode-btn[data-mode="dream"] { background-image: url('dream_button_freeze_off.png'); }
+        .mode-btn[data-mode="dream"].active { background-image: url('dream_button_freeze_on.png'); }
+
+        .mode-btn[data-mode="vintage"] { background-image: url('vintage_button_freeze_off.png'); }
+        .mode-btn[data-mode="vintage"].active { background-image: url('vintage_button_freeze_on.png'); }
 
         .footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 6px;
-            border-top: 1px solid rgba(185, 137, 52, 0.16);
-            color: var(--text-secondary);
-            font-size: 13px;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .mode-label {
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #b8860b;
+            margin-bottom: 8px;
         }
     </style>
 </head>
 <body>
     <div class="shell">
         <div class="header">
-            <div>
-                <div class="title">NOVA SPACE</div>
-                <div class="subtitle" id="modeSubtitle">Studio glow for modern vocals</div>
-            </div>
-            <div class="mode-label">White UI / Gold Hardware</div>
+            <div class="title">NOVA SPACE</div>
+            <div class="subtitle">REVERB BY INTERNATIONAL NOVA</div>
         </div>
 
-        <div class="knob-row">
+        <div class="controls">
             <div class="knob-card">
                 <div class="knob-label">Space</div>
-                <div class="knob small" id="space-knob" data-param="space"></div>
-                <div class="value" id="space-value">45%</div>
+                <div class="knob" id="space-knob" data-param="space"></div>
+                <div class="value" id="space-value">3.5</div>
             </div>
             <div class="knob-card">
                 <div class="knob-label">Air</div>
-                <div class="knob small" id="air-knob" data-param="air"></div>
-                <div class="value" id="air-value">60%</div>
+                <div class="knob" id="air-knob" data-param="air"></div>
+                <div class="value" id="air-value">4.2</div>
             </div>
             <div class="knob-card">
                 <div class="knob-label">Depth</div>
-                <div class="knob small" id="depth-knob" data-param="depth"></div>
-                <div class="value" id="depth-value">40%</div>
+                <div class="knob" id="depth-knob" data-param="depth"></div>
+                <div class="value" id="depth-value">2.8</div>
             </div>
             <div class="knob-card">
                 <div class="knob-label">Mix</div>
-                <div class="knob small" id="mix-knob" data-param="mix"></div>
-                <div class="value" id="mix-value">18%</div>
+                <div class="knob" id="mix-knob" data-param="mix"></div>
+                <div class="value" id="mix-value">50 %</div>
             </div>
         </div>
 
@@ -214,21 +209,20 @@
             <div class="knob-card">
                 <div class="knob-label">Width</div>
                 <div class="knob large" id="width-knob" data-param="width"></div>
-                <div class="value" id="width-value">80%</div>
+                <div class="value" id="width-value">5.4</div>
             </div>
+            <div class="stereo-meter"></div>
+            <div class="mode-label">NOVA MODE</div>
         </div>
 
         <div class="modes">
-            <button class="mode active" data-mode-index="0">Studio</button>
-            <button class="mode" data-mode-index="1">Arena</button>
-            <button class="mode" data-mode-index="2">Dream</button>
-            <button class="mode" data-mode-index="3">Vintage</button>
+            <button class="mode-btn active" data-mode="studio" data-mode-index="0">Studio</button>
+            <button class="mode-btn" data-mode="arena" data-mode-index="1">Arena</button>
+            <button class="mode-btn" data-mode="dream" data-mode-index="2">Dream</button>
+            <button class="mode-btn" data-mode="vintage" data-mode-index="3">Vintage</button>
         </div>
 
-        <div class="footer">
-            <span>Width is the hero control for vocal space placement.</span>
-            <span id="modeDescription">Tight, polished, lead-vocal ambience.</span>
-        </div>
+        <div class="footer" id="modeDescription">Tight, polished, lead-vocal ambience.</div>
     </div>
 
     <script>
@@ -324,7 +318,11 @@
         function normalisedToRotation(value) { return -120 + value * 240; }
 
         function setKnobVisual(knob, valueNode, normalised) {
-            knob.style.setProperty("--rotation", normalisedToRotation(normalised) + "deg");
+            // For image sprite: calculate frame offset
+            const isLarge = knob.classList.contains('large');
+            const spriteHeight = isLarge ? 14000 : 10000;  // Total sprite height
+            const frameOffsetY = -(normalised * spriteHeight);
+            knob.style.backgroundPosition = `center ${frameOffsetY}px`;
             valueNode.textContent = Math.round(normalised * 100) + "%";
         }
 
@@ -382,7 +380,7 @@
             var pair = modeCopy[index] || modeCopy[0];
             document.getElementById("modeSubtitle").textContent   = pair[0];
             document.getElementById("modeDescription").textContent = pair[1];
-            document.querySelectorAll(".mode").forEach(function (btn) {
+            document.querySelectorAll(".mode-btn").forEach(function (btn) {
                 btn.classList.toggle("active", Number(btn.dataset.modeIndex) === index);
             });
         }
@@ -394,7 +392,7 @@
                 updateModeCopy(Math.round(modeState.getNormalisedValue() * 3));
             }
 
-            document.querySelectorAll(".mode").forEach(function (btn) {
+            document.querySelectorAll(".mode-btn").forEach(function (btn) {
                 btn.addEventListener("click", function () {
                     var index = Number(btn.dataset.modeIndex);
                     modeState.sliderDragStarted();
