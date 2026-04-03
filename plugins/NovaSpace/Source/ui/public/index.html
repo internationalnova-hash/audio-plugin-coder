@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nova Space</title>
-    <script type="module" src="js/index.js"></script>
     <style>
         :root {
             --bg-main: #efe6d8;
@@ -230,5 +229,188 @@
             <span id="modeDescription">Tight, polished, lead-vocal ambience.</span>
         </div>
     </div>
+
+    <script>
+        /******************************************************************************
+         * PART 1: Native Interop — DO NOT MODIFY
+         ******************************************************************************/
+        if (typeof window.__JUCE__ !== "undefined" && typeof window.__JUCE__.getAndroidUserScripts !== "undefined" && typeof window.inAndroidUserScriptEval === "undefined") {
+            window.inAndroidUserScriptEval = true;
+            eval(window.__JUCE__.getAndroidUserScripts());
+            delete window.inAndroidUserScriptEval;
+        }
+        if (typeof window.__JUCE__ === "undefined") {
+            window.__JUCE__ = { postMessage: function () { } };
+        }
+        if (typeof window.__JUCE__.initialisationData === "undefined") {
+            window.__JUCE__.initialisationData = { __juce__platform: [], __juce__functions: [], __juce__registeredGlobalEventIds: [], __juce__sliders: [], __juce__toggles: [], __juce__comboBoxes: [] };
+        }
+
+        /******************************************************************************
+         * PART 2: JUCE Bridge — DO NOT MODIFY
+         ******************************************************************************/
+        class ListenerList {
+            constructor() { this.listeners = new Map(); this.listenerId = 0; }
+            addListener(fn) { const id = this.listenerId++; this.listeners.set(id, fn); return id; }
+            removeListener(id) { this.listeners.delete(id); }
+            callListeners(payload) { for (const [, value] of this.listeners) value(payload); }
+        }
+        class EventListenerList {
+            constructor() { this.eventListeners = new Map(); }
+            addEventListener(eventId, fn) { if (!this.eventListeners.has(eventId)) this.eventListeners.set(eventId, new ListenerList()); return [eventId, this.eventListeners.get(eventId).addListener(fn)]; }
+            removeEventListener([eventId, id]) { if (this.eventListeners.has(eventId)) this.eventListeners.get(eventId).removeListener(id); }
+            emitEvent(eventId, object) { if (this.eventListeners.has(eventId)) this.eventListeners.get(eventId).callListeners(object); }
+        }
+        class Backend {
+            constructor() { this.listeners = new EventListenerList(); }
+            addEventListener(eventId, fn) { return this.listeners.addEventListener(eventId, fn); }
+            removeEventListener([eventId, id]) { this.listeners.removeEventListener(eventId, id); }
+            emitEvent(eventId, object) { window.__JUCE__.postMessage(JSON.stringify({ eventId: eventId, payload: object })); }
+            emitByBackend(eventId, object) { this.listeners.emitEvent(eventId, JSON.parse(object)); }
+        }
+        if (typeof window.__JUCE__.backend === "undefined") window.__JUCE__.backend = new Backend();
+
+        class SliderState {
+            constructor(name) {
+                this.name = name;
+                this.identifier = "__juce__slider" + this.name;
+                this.scaledValue = 0;
+                this.properties = { start: 0, end: 1, skew: 1, name: "", label: "", numSteps: 100, interval: 0, parameterIndex: -1 };
+                this.valueChangedEvent = new ListenerList();
+                this.propertiesChangedEvent = new ListenerList();
+                window.__JUCE__.backend.addEventListener(this.identifier, (e) => {
+                    if (e.eventType === "valueChanged") { this.scaledValue = e.value; this.valueChangedEvent.callListeners(); }
+                    if (e.eventType === "propertiesChanged") { let { eventType: _, ...rest } = e; this.properties = rest; this.propertiesChangedEvent.callListeners(); }
+                });
+                window.__JUCE__.backend.emitEvent(this.identifier, { eventType: "requestInitialUpdate" });
+            }
+            setNormalisedValue(v) {
+                const interval = this.properties.interval;
+                let scaled = Math.pow(v, 1 / this.properties.skew) * (this.properties.end - this.properties.start) + this.properties.start;
+                if (interval !== 0) { const s = this.properties.start; scaled = Math.max(s, Math.min(this.properties.end, s + interval * Math.floor((scaled - s) / interval + 0.5))); }
+                this.scaledValue = scaled;
+                window.__JUCE__.backend.emitEvent(this.identifier, { eventType: "valueChanged", value: this.scaledValue });
+            }
+            sliderDragStarted() { window.__JUCE__.backend.emitEvent(this.identifier, { eventType: "sliderDragStarted" }); }
+            sliderDragEnded()   { window.__JUCE__.backend.emitEvent(this.identifier, { eventType: "sliderDragEnded" }); }
+            getNormalisedValue() { return Math.pow((this.scaledValue - this.properties.start) / (this.properties.end - this.properties.start), this.properties.skew); }
+        }
+
+        const _sliderStates = new Map();
+        function getSliderState(name) {
+            if (!_sliderStates.has(name)) _sliderStates.set(name, new SliderState(name));
+            return _sliderStates.get(name);
+        }
+
+        /******************************************************************************
+         * PART 3: Nova Space UI Logic
+         ******************************************************************************/
+        const modeCopy = {
+            0: ["Studio glow for modern vocals",   "Tight, polished, lead-vocal ambience."],
+            1: ["Wide modern lift with bigger walls", "Open, glossy, performance-sized space."],
+            2: ["Soft bloom with long airy motion",  "Diffuse ambient trail for cinematic vocals."],
+            3: ["Warm plate memory with golden decay", "Darker, richer, hardware-inspired tail."]
+        };
+
+        const sliderConfig = {
+            space: { defaultValue: 0.45 },
+            air:   { defaultValue: 0.60 },
+            depth: { defaultValue: 0.40 },
+            mix:   { defaultValue: 0.18 },
+            width: { defaultValue: 0.80 }
+        };
+
+        function normalisedToRotation(value) { return -120 + value * 240; }
+
+        function setKnobVisual(knob, valueNode, normalised) {
+            knob.style.setProperty("--rotation", normalisedToRotation(normalised) + "deg");
+            valueNode.textContent = Math.round(normalised * 100) + "%";
+        }
+
+        function initKnob(paramName) {
+            const state      = getSliderState(paramName);
+            const knob       = document.getElementById(paramName + "-knob");
+            const valueNode  = document.getElementById(paramName + "-value");
+            const defaultVal = sliderConfig[paramName].defaultValue;
+
+            let isDragging = false;
+            let lastY = 0;
+
+            function update() { setKnobVisual(knob, valueNode, state.getNormalisedValue()); }
+
+            state.valueChangedEvent.addListener(update);
+            update();
+
+            knob.addEventListener("mousedown", function (e) {
+                isDragging = true;
+                lastY = e.clientY;
+                state.sliderDragStarted();
+                e.preventDefault();
+            });
+
+            document.addEventListener("mousemove", function (e) {
+                if (!isDragging) return;
+                const deltaY = lastY - e.clientY;
+                lastY = e.clientY;
+                const newNorm = Math.max(0, Math.min(1, state.getNormalisedValue() + deltaY * 0.005));
+                state.setNormalisedValue(newNorm);
+                setKnobVisual(knob, valueNode, newNorm);
+            });
+
+            document.addEventListener("mouseup", function (e) {
+                if (!isDragging) return;
+                isDragging = false;
+                state.sliderDragEnded();
+            });
+
+            knob.addEventListener("wheel", function (e) {
+                e.preventDefault();
+                const step = e.deltaY > 0 ? -0.02 : 0.02;
+                const newNorm = Math.max(0, Math.min(1, state.getNormalisedValue() + step));
+                state.setNormalisedValue(newNorm);
+                setKnobVisual(knob, valueNode, newNorm);
+            }, { passive: false });
+
+            knob.addEventListener("dblclick", function () {
+                state.setNormalisedValue(defaultVal);
+                setKnobVisual(knob, valueNode, defaultVal);
+            });
+        }
+
+        function updateModeCopy(index) {
+            var pair = modeCopy[index] || modeCopy[0];
+            document.getElementById("modeSubtitle").textContent   = pair[0];
+            document.getElementById("modeDescription").textContent = pair[1];
+            document.querySelectorAll(".mode").forEach(function (btn) {
+                btn.classList.toggle("active", Number(btn.dataset.modeIndex) === index);
+            });
+        }
+
+        function initModeButtons() {
+            var modeState = getSliderState("nova_mode");
+
+            function updateFromState() {
+                updateModeCopy(Math.round(modeState.getNormalisedValue() * 3));
+            }
+
+            document.querySelectorAll(".mode").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    var index = Number(btn.dataset.modeIndex);
+                    modeState.sliderDragStarted();
+                    modeState.setNormalisedValue(index / 3);
+                    modeState.sliderDragEnded();
+                    updateModeCopy(index);
+                });
+            });
+
+            modeState.valueChangedEvent.addListener(updateFromState);
+            updateFromState();
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            Object.keys(sliderConfig).forEach(initKnob);
+            initModeButtons();
+        });
+    </script>
 </body>
 </html>

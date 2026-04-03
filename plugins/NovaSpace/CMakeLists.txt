@@ -23,9 +23,6 @@ endif()
 juce_add_binary_data(NovaSpace_WebUI
     SOURCES
         Source/ui/public/index.html
-        Source/ui/public/js/index.js
-        Source/ui/public/js/juce/index.js
-        Source/ui/public/js/juce/check_native_interop.js
 )
 
 juce_add_plugin(NovaSpace
