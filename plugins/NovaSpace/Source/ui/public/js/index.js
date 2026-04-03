@@ -85,17 +85,23 @@ function createKnobController(paramName) {
     };
 
     let dragging = false;
-    let dragOrigin = 0;
-    let dragStart = defaultValue;
+    let lastY = 0;
 
     const startDrag = (event) => {
+        if (dragging) {
+            return;
+        }
+
         dragging = true;
-        dragOrigin = event.clientY;
-        dragStart = state.getNormalisedValue();
-        if (event.pointerId !== undefined) {
+        lastY = event.clientY;
+
+        if (event.pointerId !== undefined && knob.setPointerCapture) {
             knob.setPointerCapture(event.pointerId);
         }
+
         state.sliderDragStarted();
+        event.preventDefault();
+        event.stopPropagation();
     };
 
     const moveDrag = (event) => {
@@ -103,31 +109,45 @@ function createKnobController(paramName) {
             return;
         }
 
-        const delta = (dragOrigin - event.clientY) * 0.0045;
-        setFromUser(dragStart + delta);
+        const deltaY = lastY - event.clientY;
+        lastY = event.clientY;
+        setFromUser(state.getNormalisedValue() + deltaY * 0.005);
+        event.preventDefault();
     };
 
-    const finishDrag = () => {
+    const finishDrag = (event) => {
         if (!dragging) {
             return;
         }
 
         dragging = false;
         state.sliderDragEnded();
+
+        if (event?.pointerId !== undefined && knob.releasePointerCapture) {
+            try {
+                knob.releasePointerCapture(event.pointerId);
+            } catch {
+                // Ignore missing capture state.
+            }
+        }
     };
 
-    // Pointer events (preferred, works on most platforms)
     knob.addEventListener("pointerdown", startDrag);
-    knob.addEventListener("pointermove", moveDrag);
-    knob.addEventListener("pointerup", finishDrag);
-    knob.addEventListener("pointercancel", finishDrag);
+    document.addEventListener("pointermove", moveDrag, true);
+    document.addEventListener("pointerup", finishDrag, true);
+    document.addEventListener("pointercancel", finishDrag, true);
 
-    // Mouse events (fallback for macOS WebKit compatibility)
     knob.addEventListener("mousedown", startDrag);
     document.addEventListener("mousemove", moveDrag, true);
     document.addEventListener("mouseup", finishDrag, true);
 
-    // Double-click to reset
+    knob.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const step = event.deltaY > 0 ? -0.02 : 0.02;
+        setFromUser(state.getNormalisedValue() + step);
+    }, { passive: false });
+
     knob.addEventListener("dblclick", () => setFromUser(defaultValue));
 
     state.valueChangedEvent.addListener(() => setVisual(state.getNormalisedValue()));
