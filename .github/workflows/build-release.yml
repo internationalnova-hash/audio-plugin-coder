@@ -143,19 +143,19 @@ jobs:
             -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
 
       - name: Build VST3
-        if: inputs.macos_vst3
+        if: github.event_name == 'push' || inputs.macos_vst3
         run: |
           target="$(echo '${{ matrix.plugin }}' | tr -cd '[:alnum:]_')"
           cmake --build build --config Release --target "${target}_VST3"
 
       - name: Build AU
-        if: inputs.macos_au
+        if: github.event_name == 'push' || inputs.macos_au
         run: |
           target="$(echo '${{ matrix.plugin }}' | tr -cd '[:alnum:]_')"
           cmake --build build --config Release --target "${target}_AU"
 
       - name: Build Standalone
-        if: inputs.macos_standalone
+        if: github.event_name == 'push' || inputs.macos_standalone
         run: |
           target="$(echo '${{ matrix.plugin }}' | tr -cd '[:alnum:]_')"
           cmake --build build --config Release --target "${target}_Standalone"

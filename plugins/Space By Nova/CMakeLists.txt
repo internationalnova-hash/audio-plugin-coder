@@ -38,6 +38,8 @@ juce_add_binary_data(SpaceByNova_WebUI
 
 juce_add_plugin(${PLUGIN_TARGET}
     COMPANY_NAME "International Nova"
+    COMPANY_WEBSITE "https://noizefield.com"
+    BUNDLE_ID "com.internationalnova.spacebynova"
     PLUGIN_MANUFACTURER_CODE Inov
     PLUGIN_CODE NvSp
     FORMATS ${PLUGIN_FORMATS}
