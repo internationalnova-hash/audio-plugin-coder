@@ -51,6 +51,31 @@ echo "  VST3: $VST3_BUNDLE"
 [[ -n "$AU_BUNDLE" ]] && echo "  AU: $AU_BUNDLE"
 [[ -n "$STANDALONE_APP" ]] && echo "  Standalone: $STANDALONE_APP"
 
+maybe_sign_bundle() {
+    local bundle_path="$1"
+
+    if [[ -n "${APPLE_SIGNING_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
+        echo "Signing $(basename "$bundle_path") with $APPLE_SIGNING_IDENTITY"
+        codesign --force --deep --strict --options runtime --timestamp \
+            --sign "$APPLE_SIGNING_IDENTITY" "$bundle_path"
+    fi
+}
+
+maybe_notarize_dmg() {
+    local dmg_path="$1"
+
+    if [[ -n "${APPLE_NOTARY_APPLE_ID:-}" && -n "${APPLE_NOTARY_PASSWORD:-}" && -n "${APPLE_NOTARY_TEAM_ID:-}" ]] \
+        && command -v xcrun >/dev/null 2>&1; then
+        echo "Submitting DMG for notarization..."
+        xcrun notarytool submit "$dmg_path" \
+            --apple-id "$APPLE_NOTARY_APPLE_ID" \
+            --password "$APPLE_NOTARY_PASSWORD" \
+            --team-id "$APPLE_NOTARY_TEAM_ID" \
+            --wait
+        xcrun stapler staple "$dmg_path"
+    fi
+}
+
 # --- CREATE LICENSE FILE ---
 
 LICENSE_PATH="$DIST_DIR/LICENSE.txt"
@@ -107,6 +132,7 @@ mkdir -p "$DMG_CONTENTS"
 if [[ -n "$VST3_BUNDLE" ]]; then
     mkdir -p "$DMG_CONTENTS/VST3"
     cp -R "$VST3_BUNDLE" "$DMG_CONTENTS/VST3/"
+    maybe_sign_bundle "$DMG_CONTENTS/VST3/$(basename "$VST3_BUNDLE")"
     echo "  Added VST3"
 fi
 
@@ -114,12 +140,14 @@ fi
 if [[ -n "$AU_BUNDLE" ]]; then
     mkdir -p "$DMG_CONTENTS/AU"
     cp -R "$AU_BUNDLE" "$DMG_CONTENTS/AU/"
+    maybe_sign_bundle "$DMG_CONTENTS/AU/$(basename "$AU_BUNDLE")"
     echo "  Added AudioUnit"
 fi
 
 # Copy Standalone
 if [[ -n "$STANDALONE_APP" ]]; then
     cp -R "$STANDALONE_APP" "$DMG_CONTENTS/"
+    maybe_sign_bundle "$DMG_CONTENTS/$(basename "$STANDALONE_APP")"
     echo "  Added Standalone"
 fi
 
@@ -139,6 +167,7 @@ $PLUGIN_NAME v$VERSION - Installation Guide
 
 AUTOMATIC INSTALLATION:
   Run the included install.command file (double-click it).
+  It will also clear the macOS quarantine flag on the copied bundles automatically.
 
 MANUAL INSTALLATION:
 
@@ -179,6 +208,7 @@ if [[ -d "\$SCRIPT_DIR/VST3/${PLUGIN_NAME}.vst3" ]]; then
     mkdir -p "\$VST3_DIR"
     rm -rf "\$VST3_DIR/${PLUGIN_NAME}.vst3"
     cp -R "\$SCRIPT_DIR/VST3/${PLUGIN_NAME}.vst3" "\$VST3_DIR/"
+    xattr -dr com.apple.quarantine "\$VST3_DIR/${PLUGIN_NAME}.vst3" 2>/dev/null || true
     echo "  Installed VST3 to \$VST3_DIR/"
 fi
 
@@ -188,21 +218,26 @@ if [[ -d "\$SCRIPT_DIR/AU/${PLUGIN_NAME}.component" ]]; then
     mkdir -p "\$AU_DIR"
     rm -rf "\$AU_DIR/${PLUGIN_NAME}.component"
     cp -R "\$SCRIPT_DIR/AU/${PLUGIN_NAME}.component" "\$AU_DIR/"
+    xattr -dr com.apple.quarantine "\$AU_DIR/${PLUGIN_NAME}.component" 2>/dev/null || true
     echo "  Installed AU to \$AU_DIR/"
 fi
 
 # Install Standalone
 if [[ -d "\$SCRIPT_DIR/${PLUGIN_NAME}.app" ]]; then
+    APP_DEST="/Applications/${PLUGIN_NAME}.app"
     cp -R "\$SCRIPT_DIR/${PLUGIN_NAME}.app" "/Applications/" 2>/dev/null || {
         echo "  Could not copy to /Applications (permission denied). Copying to ~/Applications instead."
         mkdir -p "\$HOME/Applications"
         cp -R "\$SCRIPT_DIR/${PLUGIN_NAME}.app" "\$HOME/Applications/"
+        APP_DEST="\$HOME/Applications/${PLUGIN_NAME}.app"
     }
+    xattr -dr com.apple.quarantine "\$APP_DEST" 2>/dev/null || true
     echo "  Installed Standalone"
 fi
 
 echo ""
 echo "Installation complete! Restart your DAW to detect the plugin."
+echo "Any copied bundles had their quarantine flag cleared automatically."
 echo "Press any key to close..."
 read -n 1
 EOINSTALLSCRIPT
@@ -224,6 +259,8 @@ hdiutil create \
     -ov \
     -format UDZO \
     "$DMG_PATH"
+
+maybe_notarize_dmg "$DMG_PATH"
 
 # --- CLEANUP ---
 rm -rf "$STAGING_DIR"

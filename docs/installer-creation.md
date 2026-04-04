@@ -100,6 +100,22 @@ macOS installers require macOS-specific tools:
 ### Future Enhancement
 Add macOS installer creation to GitHub Actions workflow (requires macOS runner with signing certificates).
 
+### GitHub Secrets for Signed macOS Builds
+
+Do **not** commit Apple credentials into the repository. Add them in:
+**GitHub → Repository Settings → Secrets and variables → Actions**
+
+Required secret names:
+
+- `APPLE_CERTIFICATE_P12_BASE64` — Base64-encoded Developer ID Application certificate export
+- `APPLE_CERTIFICATE_PASSWORD` — password for the `.p12` certificate
+- `APPLE_SIGNING_IDENTITY` — e.g. `Developer ID Application: Your Name (TEAMID)`
+- `APPLE_NOTARY_APPLE_ID` — Apple ID used for notarization
+- `APPLE_NOTARY_TEAM_ID` — Apple Developer Team ID
+- `APPLE_NOTARY_PASSWORD` — app-specific password for `notarytool`
+
+Once these are configured, the macOS release workflow can sign and notarize the `.app`, `.vst3`, and `.component` bundles automatically.
+
 ---
 
 ## Linux Packages (NOT IMPLEMENTED)

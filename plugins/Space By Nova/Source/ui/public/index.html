@@ -166,56 +166,74 @@
       position: absolute;
       border-radius: 50%;
       background:
-        radial-gradient(circle at 32% 26%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.38) 18%, transparent 30%),
-        radial-gradient(circle at 65% 70%, #e4d9c9 0%, #efe8db 42%, #e4d8c6 76%, #ddd0bc 100%);
-      border: 2px solid rgba(212, 187, 140, 0.95);
+        radial-gradient(circle at 32% 24%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.62) 16%, rgba(255,255,255,0.14) 26%, transparent 34%),
+        linear-gradient(145deg, #f8f3eb 0%, #eadfcf 48%, #dbc8ae 100%);
+      border: 1px solid rgba(206, 176, 120, 0.95);
       box-shadow:
-        inset 0 2px 4px rgba(255,255,255,0.72),
-        inset -14px -18px 28px rgba(173, 143, 92, 0.16),
-        inset 10px 12px 16px rgba(255,255,255,0.24),
-        0 10px 22px rgba(146, 124, 88, 0.12);
+        inset 0 1px 0 rgba(255,255,255,0.92),
+        inset 0 -10px 18px rgba(170, 138, 88, 0.12),
+        0 8px 18px rgba(126, 100, 62, 0.10),
+        0 0 0 7px rgba(255, 248, 236, 0.42);
       overflow: visible;
       cursor: ns-resize;
       user-select: none;
-      transition: transform var(--ease), box-shadow var(--ease);
+      transition: transform var(--ease), box-shadow var(--ease), filter var(--ease);
     }
 
     .knob-shell:hover,
     .knob-shell.dragging {
       transform: translateY(-1px);
+      filter: brightness(1.01);
       box-shadow:
-        inset 0 2px 4px rgba(255,255,255,0.72),
-        inset -14px -18px 28px rgba(173, 143, 92, 0.16),
-        inset 10px 12px 16px rgba(255,255,255,0.24),
-        0 14px 26px rgba(146, 124, 88, 0.15);
+        inset 0 1px 0 rgba(255,255,255,0.94),
+        inset 0 -10px 18px rgba(170, 138, 88, 0.14),
+        0 12px 24px rgba(126, 100, 62, 0.13),
+        0 0 0 7px rgba(255, 248, 236, 0.52);
     }
 
     .knob-shell::before {
       content: "";
       position: absolute;
-      inset: 10px;
+      inset: 8px;
       border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.55);
-      opacity: 0.65;
+      border: 1px solid rgba(255,255,255,0.74);
+      box-shadow:
+        inset 0 0 0 1px rgba(211, 185, 138, 0.28),
+        inset 0 -6px 10px rgba(162, 130, 81, 0.08);
+      opacity: 0.9;
       pointer-events: none;
+    }
+
+    .knob-shell::after {
+      content: "";
+      position: absolute;
+      inset: 26%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 32% 28%, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.22) 26%, transparent 34%),
+        linear-gradient(180deg, #efe4d3 0%, #e3d3bb 100%);
+      box-shadow:
+        inset 0 1px 1px rgba(255,255,255,0.7),
+        inset 0 -4px 7px rgba(149, 115, 62, 0.10);
+      pointer-events: none;
+      opacity: 0.96;
     }
 
     .knob-shell.large {
       background:
-        radial-gradient(circle at 30% 24%, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.42) 16%, transparent 30%),
-        radial-gradient(circle at 64% 72%, #e3d6c3 0%, #efe7da 38%, #e0d0bc 74%, #d7c6af 100%);
+        radial-gradient(circle at 31% 23%, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.64) 16%, rgba(255,255,255,0.15) 27%, transparent 35%),
+        linear-gradient(145deg, #f9f4ed 0%, #eadfce 46%, #d8c3a8 100%);
       box-shadow:
-        inset 0 2px 5px rgba(255,255,255,0.78),
-        inset -20px -24px 36px rgba(173, 143, 92, 0.18),
-        inset 12px 14px 18px rgba(255,255,255,0.22),
-        0 14px 28px rgba(146, 124, 88, 0.14),
-        0 0 0 10px rgba(231, 214, 186, 0.16);
+        inset 0 1px 0 rgba(255,255,255,0.94),
+        inset 0 -12px 22px rgba(170, 138, 88, 0.13),
+        0 12px 26px rgba(126, 100, 62, 0.11),
+        0 0 0 10px rgba(255, 248, 236, 0.38);
     }
 
     .indicator {
       position: absolute;
       inset: 0;
-      transform: rotate(var(--rotation, -12deg));
+      transform: rotate(var(--rotation, -14deg));
       transition: transform var(--ease);
       pointer-events: none;
     }
@@ -223,55 +241,58 @@
     .indicator::before {
       content: "";
       position: absolute;
-      inset: 14%;
+      inset: 11%;
       border-radius: 50%;
       background: conic-gradient(
-        from 222deg,
-        transparent 0deg 26deg,
-        var(--gold) 26deg 108deg,
-        transparent 108deg 360deg
+        from 218deg,
+        rgba(228, 215, 191, 0.80) 0deg 28deg,
+        #ecd79b 28deg 74deg,
+        #c88f2f 74deg 112deg,
+        transparent 112deg 360deg
       );
-      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 14px), #000 calc(100% - 13px));
-      mask: radial-gradient(farthest-side, transparent calc(100% - 14px), #000 calc(100% - 13px));
-      filter: drop-shadow(0 1px 1px rgba(124, 88, 28, 0.18));
+      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 11px), #000 calc(100% - 10px));
+      mask: radial-gradient(farthest-side, transparent calc(100% - 11px), #000 calc(100% - 10px));
+      filter: drop-shadow(0 1px 1px rgba(124, 88, 28, 0.16));
+      opacity: 0.96;
     }
 
     .indicator::after {
       content: "";
       position: absolute;
-      width: 18px;
-      height: 18px;
-      left: 21%;
-      top: 8%;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #f5e1a7 0%, var(--gold-soft) 34%, var(--gold) 100%);
+      left: calc(50% - 5px);
+      top: 12%;
+      width: 10px;
+      height: 24px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #f4dfab 0%, #d8a94a 50%, #b78023 100%);
       box-shadow:
-        0 0 0 4px rgba(255, 249, 238, 0.88),
-        0 2px 6px rgba(170, 130, 54, 0.24);
+        0 0 0 3px rgba(255, 249, 238, 0.9),
+        0 3px 8px rgba(152, 110, 34, 0.18);
     }
 
     .large .indicator::before {
-      inset: 13%;
+      inset: 10%;
       background: conic-gradient(
-        from 308deg,
-        transparent 0deg 20deg,
-        var(--gold) 20deg 108deg,
-        transparent 108deg 360deg
+        from 218deg,
+        rgba(228, 215, 191, 0.82) 0deg 32deg,
+        #f0ddab 32deg 78deg,
+        #c88f2f 78deg 116deg,
+        transparent 116deg 360deg
       );
-      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 19px), #000 calc(100% - 18px));
-      mask: radial-gradient(farthest-side, transparent calc(100% - 19px), #000 calc(100% - 18px));
-      filter: drop-shadow(0 2px 2px rgba(124, 88, 28, 0.16));
+      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 15px), #000 calc(100% - 14px));
+      mask: radial-gradient(farthest-side, transparent calc(100% - 15px), #000 calc(100% - 14px));
+      filter: drop-shadow(0 2px 2px rgba(124, 88, 28, 0.14));
     }
 
     .large .indicator::after {
-      width: 24px;
-      height: 24px;
-      right: 7%;
-      top: 16%;
-      background: radial-gradient(circle at 30% 30%, #f5e1a7 0%, var(--gold-soft) 34%, var(--gold) 100%);
+      left: calc(50% - 6px);
+      top: 11%;
+      width: 12px;
+      height: 30px;
+      background: linear-gradient(180deg, #f5e4b7 0%, #deaf54 50%, #bc8123 100%);
       box-shadow:
-        0 0 0 5px rgba(255, 249, 238, 0.92),
-        0 3px 8px rgba(170, 130, 54, 0.28);
+        0 0 0 4px rgba(255, 249, 238, 0.92),
+        0 3px 9px rgba(170, 130, 54, 0.22);
     }
 
     .mini-dot {

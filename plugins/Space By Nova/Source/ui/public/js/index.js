@@ -1,4 +1,4 @@
-import * as Juce from "./juce/index.js";
+let Juce = null;
 
 const parameterStates = {};
 const modeNames = ["Studio", "Arena", "Dream", "Vintage"];
@@ -86,7 +86,8 @@ function applyPreset(modeName, pushToBackend = true) {
 
   if (pushToBackend && parameterStates.nova_mode) {
     try {
-      parameterStates.nova_mode.setNormalisedValue(modeNames.indexOf(modeName) / 3);
+      const modeIndex = modeNames.indexOf(modeName);
+      parameterStates.nova_mode.setNormalisedValue(modeIndex / (modeNames.length - 1));
     } catch (error) {
       console.warn("Failed to set mode:", error.message);
     }
@@ -94,7 +95,7 @@ function applyPreset(modeName, pushToBackend = true) {
 }
 
 function initialiseParameterStates() {
-  if (!juceAvailable) return;
+  if (!juceAvailable || !Juce) return;
 
   [...macroParams, "nova_mode"].forEach((param) => {
     try {
@@ -106,17 +107,17 @@ function initialiseParameterStates() {
 
   macroParams.forEach((param) => {
     const state = parameterStates[param];
-    if (!state) return;
+    if (!state?.valueChangedEvent) return;
 
-    state.addValueChangedListener(() => {
+    state.valueChangedEvent.addListener(() => {
       updateVisual(param, state.getNormalisedValue() * 100);
     });
   });
 
-  if (parameterStates.nova_mode) {
-    parameterStates.nova_mode.addValueChangedListener(() => {
-      const modeIndex = Math.round(parameterStates.nova_mode.getNormalisedValue() * 3);
-      setActiveMode(modeNames[clamp(modeIndex, 0, 3)]);
+  if (parameterStates.nova_mode?.valueChangedEvent) {
+    parameterStates.nova_mode.valueChangedEvent.addListener(() => {
+      const modeIndex = Math.round(parameterStates.nova_mode.getNormalisedValue() * (modeNames.length - 1));
+      setActiveMode(modeNames[clamp(modeIndex, 0, modeNames.length - 1)]);
     });
   }
 
@@ -127,10 +128,30 @@ function initialiseParameterStates() {
     });
 
     if (parameterStates.nova_mode) {
-      const modeIndex = Math.round(parameterStates.nova_mode.getNormalisedValue() * 3);
-      setActiveMode(modeNames[clamp(modeIndex, 0, 3)]);
+      const modeIndex = Math.round(parameterStates.nova_mode.getNormalisedValue() * (modeNames.length - 1));
+      setActiveMode(modeNames[clamp(modeIndex, 0, modeNames.length - 1)]);
     }
   }, 50);
+}
+
+function finishActiveDrag(pointerId = null) {
+  if (!activeDrag) return;
+
+  if (pointerId !== null && activeDrag.pointerId !== null && pointerId !== activeDrag.pointerId) {
+    return;
+  }
+
+  const state = parameterStates[activeDrag.param];
+  if (state) {
+    try { state.sliderDragEnded(); } catch (error) { console.warn(error.message); }
+  }
+
+  if (typeof activeDrag.knob.releasePointerCapture === "function" && activeDrag.pointerId !== null) {
+    try { activeDrag.knob.releasePointerCapture(activeDrag.pointerId); } catch (error) { console.warn(error.message); }
+  }
+
+  activeDrag.knob.classList.remove("dragging");
+  activeDrag = null;
 }
 
 function initialiseKnobs() {
@@ -140,15 +161,24 @@ function initialiseKnobs() {
 
     updateVisual(param, currentValues[param] ?? defaultPercent);
 
-    knob.addEventListener("mousedown", (event) => {
+    knob.addEventListener("pointerdown", (event) => {
+      if (event.button !== undefined && event.button !== 0) return;
+
       event.preventDefault();
+      event.stopPropagation();
+
       knob.classList.add("dragging");
       activeDrag = {
         param,
         knob,
+        pointerId: event.pointerId ?? null,
         startY: event.clientY,
         startValue: currentValues[param] ?? defaultPercent
       };
+
+      if (typeof knob.setPointerCapture === "function" && event.pointerId !== undefined) {
+        try { knob.setPointerCapture(event.pointerId); } catch (error) { console.warn(error.message); }
+      }
 
       const state = parameterStates[param];
       if (state) {
@@ -161,24 +191,23 @@ function initialiseKnobs() {
     });
   });
 
-  document.addEventListener("mousemove", (event) => {
+  document.addEventListener("pointermove", (event) => {
     if (!activeDrag) return;
+    if (activeDrag.pointerId !== null && event.pointerId !== activeDrag.pointerId) return;
+
+    event.preventDefault();
 
     const deltaY = activeDrag.startY - event.clientY;
-    const nextValue = clamp(activeDrag.startValue + deltaY * 0.45);
+    const nextValue = clamp(activeDrag.startValue + (deltaY * 0.45));
     setParamPercent(activeDrag.param, nextValue, { pushToBackend: true });
   });
 
-  document.addEventListener("mouseup", () => {
-    if (!activeDrag) return;
+  document.addEventListener("pointerup", (event) => {
+    finishActiveDrag(event.pointerId ?? null);
+  });
 
-    const state = parameterStates[activeDrag.param];
-    if (state) {
-      try { state.sliderDragEnded(); } catch (error) { console.warn(error.message); }
-    }
-
-    activeDrag.knob.classList.remove("dragging");
-    activeDrag = null;
+  document.addEventListener("pointercancel", (event) => {
+    finishActiveDrag(event.pointerId ?? null);
   });
 }
 
@@ -228,14 +257,37 @@ function initialiseModeButtons() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+async function bootUi() {
   juceAvailable = typeof window.__JUCE__ !== "undefined";
-  initialiseParameterStates();
+
+  if (juceAvailable) {
+    try {
+      Juce = await import("./juce/index.js");
+    } catch (error) {
+      juceAvailable = false;
+      console.warn("JUCE bridge unavailable, falling back to preview mode:", error.message);
+    }
+  }
+
   initialiseKnobs();
   initialiseReadouts();
   initialiseModeButtons();
 
-  if (!juceAvailable) {
+  if (juceAvailable) {
+    try {
+      initialiseParameterStates();
+    } catch (error) {
+      juceAvailable = false;
+      console.warn("Parameter sync unavailable, keeping local UI active:", error.message);
+      applyPreset("Studio", false);
+    }
+  } else {
     applyPreset("Studio", false);
   }
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => { void bootUi(); }, { once: true });
+} else {
+  void bootUi();
+}

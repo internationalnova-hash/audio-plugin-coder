@@ -136,6 +136,32 @@ jobs:
       - name: Install Dependencies
         run: brew install cmake || true
 
+      - name: Detect signing configuration
+        id: mac_signing
+        shell: bash
+        env:
+          APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_NOTARY_APPLE_ID: ${{ secrets.APPLE_NOTARY_APPLE_ID }}
+          APPLE_NOTARY_TEAM_ID: ${{ secrets.APPLE_NOTARY_TEAM_ID }}
+          APPLE_NOTARY_PASSWORD: ${{ secrets.APPLE_NOTARY_PASSWORD }}
+        run: |
+          if [[ -n "$APPLE_CERTIFICATE_P12_BASE64" && -n "$APPLE_CERTIFICATE_PASSWORD" && -n "$APPLE_SIGNING_IDENTITY" && -n "$APPLE_NOTARY_APPLE_ID" && -n "$APPLE_NOTARY_TEAM_ID" && -n "$APPLE_NOTARY_PASSWORD" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "macOS signing and notarization are enabled for this run."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::macOS signing secrets are not configured. The build will succeed, but Gatekeeper may still ask users to bypass the first launch/install."
+          fi
+
+      - name: Import Apple signing certificate
+        if: steps.mac_signing.outputs.enabled == 'true'
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+
       - name: Configure CMake
         run: |
           cmake -S . -B build -G Xcode \
@@ -167,6 +193,45 @@ jobs:
           find build -name "*.component" -exec cp -R {} dist/ \;
           find build -name "*.app" -not -path "*/CMakeFiles/*" -exec cp -R {} dist/ \;
           echo "Collected:" && ls dist/
+
+      - name: Code sign bundles
+        if: steps.mac_signing.outputs.enabled == 'true'
+        shell: bash
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          while IFS= read -r bundle; do
+            echo "Signing $bundle"
+            codesign --force --deep --strict --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$bundle"
+          done < <(find dist \( -name "*.vst3" -o -name "*.component" -o -name "*.app" \) -print)
+
+          while IFS= read -r bundle; do
+            echo "Verifying $bundle"
+            codesign --verify --deep --strict --verbose=2 "$bundle"
+          done < <(find dist \( -name "*.vst3" -o -name "*.component" -o -name "*.app" \) -print)
+
+      - name: Notarize bundles
+        if: steps.mac_signing.outputs.enabled == 'true'
+        shell: bash
+        env:
+          APPLE_NOTARY_APPLE_ID: ${{ secrets.APPLE_NOTARY_APPLE_ID }}
+          APPLE_NOTARY_TEAM_ID: ${{ secrets.APPLE_NOTARY_TEAM_ID }}
+          APPLE_NOTARY_PASSWORD: ${{ secrets.APPLE_NOTARY_PASSWORD }}
+        run: |
+          ARCHIVE_PATH="$RUNNER_TEMP/${{ matrix.plugin }}-macos-notarization.zip"
+          ditto -c -k --sequesterRsrc --keepParent dist "$ARCHIVE_PATH"
+          xcrun notarytool submit "$ARCHIVE_PATH" \
+            --apple-id "$APPLE_NOTARY_APPLE_ID" \
+            --password "$APPLE_NOTARY_PASSWORD" \
+            --team-id "$APPLE_NOTARY_TEAM_ID" \
+            --wait
+
+          while IFS= read -r bundle; do
+            echo "Stapling $bundle"
+            xcrun stapler staple "$bundle"
+          done < <(find dist \( -name "*.vst3" -o -name "*.component" -o -name "*.app" \) -print)
+
+          rm -f "$ARCHIVE_PATH"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v5

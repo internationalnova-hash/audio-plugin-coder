@@ -224,6 +224,16 @@ Standalone: /Applications/
 
 **Note:** macOS installers require code signing. The workflow prepares the structure; you must finalize on a Mac with a developer certificate.
 
+**Required GitHub Actions secrets for automated signed macOS builds:**
+- `APPLE_CERTIFICATE_P12_BASE64`
+- `APPLE_CERTIFICATE_PASSWORD`
+- `APPLE_SIGNING_IDENTITY`
+- `APPLE_NOTARY_APPLE_ID`
+- `APPLE_NOTARY_TEAM_ID`
+- `APPLE_NOTARY_PASSWORD`
+
+Set these in **GitHub → Settings → Secrets and variables → Actions**. Do not commit the actual credential values into the repository.
+
 ### Linux Installation
 
 **Formats:**
