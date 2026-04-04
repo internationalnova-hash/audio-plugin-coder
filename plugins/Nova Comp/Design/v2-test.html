@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nova Comp — Triangle UI Preview</title>
+  <style>
+    :root {
+      --face: #efe1c7;
+      --face-shade: #e3d2b4;
+      --panel: #d8c5a0;
+      --text-main: #473d33;
+      --text-soft: #6b6258;
+      --gold: #be9440;
+      --gold-deep: #9e7330;
+      --gold-pale: #e8cc86;
+      --meter: #b7a66a;
+      --white: #fff9f1;
+      --ease: 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: linear-gradient(180deg, #dac8a9 0%, #cdb78e 100%);
+      font-family: "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+      color: var(--text-main);
+    }
+    body { display: grid; place-items: center; }
+
+    .plugin {
+      position: relative;
+      width: min(980px, 100vw);
+      height: min(620px, 100vh);
+      border-radius: 34px;
+      overflow: hidden;
+      background: linear-gradient(180deg, var(--face) 0%, var(--face-shade) 100%);
+      border: 1px solid rgba(178, 145, 84, 0.66);
+      box-shadow: 0 22px 48px rgba(90, 72, 46, 0.16), inset 0 1px 0 rgba(255,255,255,0.72), inset 0 -10px 18px rgba(156, 123, 67, 0.11);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 34px 42px 18px;
+    }
+
+    .title {
+      margin: 0;
+      font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      font-size: 54px;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      color: #2f261f;
+    }
+
+    .subtitle {
+      margin-top: 7px;
+      font-size: 15px;
+      letter-spacing: 0.20em;
+      color: var(--text-soft);
+    }
+
+    .tagline {
+      text-align: right;
+      font-size: 14px;
+      line-height: 1.6;
+      letter-spacing: 0.18em;
+      color: #726455;
+      margin-top: 6px;
+    }
+
+    .inner-panel {
+      position: absolute;
+      left: 26px;
+      right: 26px;
+      top: 118px;
+      bottom: 94px;
+      border-radius: 26px;
+      padding: 22px 24px 18px;
+      background: linear-gradient(180deg, rgba(232, 219, 193, 0.98) 0%, rgba(214, 197, 164, 0.94) 100%);
+      border: 1px solid rgba(177, 145, 88, 0.52);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.42), inset 0 -14px 22px rgba(128,94,52,0.08), 0 8px 16px rgba(104, 77, 43, 0.05);
+    }
+
+    .triangle-layout {
+      position: relative;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 0.72fr;
+      grid-template-rows: auto 1fr auto;
+      column-gap: 14px;
+      row-gap: 12px;
+      align-items: start;
+    }
+
+    .hero-zone {
+      grid-column: 1 / span 2;
+      grid-row: 1 / span 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: start;
+      padding-top: 8px;
+    }
+
+    .bottom-row {
+      grid-column: 1 / span 2;
+      grid-row: 3;
+      display: flex;
+      justify-content: center;
+      gap: 70px;
+      align-items: start;
+      padding-bottom: 6px;
+    }
+
+    .output-zone {
+      grid-column: 3;
+      grid-row: 1 / span 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: start;
+      gap: 12px;
+      padding-top: 10px;
+    }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.24em;
+      color: #3f3328;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .knob-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .knob {
+      position: relative;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 32% 24%, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.30) 20%, transparent 34%),
+        repeating-conic-gradient(from 0deg, rgba(255,255,255,0.14) 0deg 11deg, rgba(173, 148, 112, 0.10) 11deg 22deg),
+        linear-gradient(145deg, #fbf5ea 0%, #eadcc6 45%, #d8c3a0 100%);
+      border: 1px solid rgba(186, 150, 98, 0.86);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.92), inset 0 -12px 20px rgba(154, 118, 70, 0.12), 0 12px 18px rgba(109, 83, 48, 0.10);
+      cursor: ns-resize;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .knob.hero {
+      width: 154px;
+      height: 154px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.92), inset 0 -14px 24px rgba(164, 124, 54, 0.16), 0 16px 24px rgba(158, 115, 48, 0.16);
+    }
+
+    .knob.medium { width: 110px; height: 110px; }
+
+    .knob::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 14px;
+      width: 7px;
+      height: 30px;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background: linear-gradient(180deg, #fff2d8 0%, var(--gold) 48%, var(--gold-deep) 100%);
+      box-shadow: 0 0 0 1px rgba(255,249,239,0.52), 0 2px 6px rgba(132,81,44,0.18);
+    }
+
+    .feedback-ring {
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      transform: rotate(var(--turn, -42deg));
+    }
+
+    .feedback-ring::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(from 218deg, rgba(232,220,191,0.7) 0deg 22deg, var(--gold-pale) 22deg 90deg, var(--gold) 90deg 126deg, transparent 126deg 360deg);
+      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 12px), #000 calc(100% - 10px));
+      mask: radial-gradient(farthest-side, transparent calc(100% - 12px), #000 calc(100% - 10px));
+    }
+
+    .knob-label {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      color: var(--text-soft);
+      text-align: center;
+    }
+
+    .readout {
+      min-width: 84px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(193, 158, 107, 0.42);
+      background: linear-gradient(180deg, rgba(255,252,247,0.96) 0%, rgba(239,228,212,0.96) 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.78), 0 4px 10px rgba(110,84,48,0.05);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+
+    .mode-buttons, .preset-buttons, .meter-toggle {
+      display: flex;
+      gap: 10px;
+    }
+
+    .mode-buttons {
+      width: 320px;
+      margin-top: 8px;
+      justify-content: center;
+    }
+
+    button {
+      border: 1px solid rgba(187, 157, 104, 0.52);
+      background: linear-gradient(180deg, rgba(255,253,249,0.96) 0%, rgba(241,230,214,0.96) 100%);
+      color: #645849;
+      cursor: pointer;
+      border-radius: 999px;
+      transition: all var(--ease);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button.active {
+      background: linear-gradient(180deg, var(--gold-pale) 0%, var(--gold) 100%);
+      color: var(--white);
+      border-color: var(--gold-deep);
+      box-shadow: 0 8px 14px rgba(158, 115, 48, 0.18);
+    }
+
+    .mode-buttons button, .meter-toggle button {
+      flex: 1;
+      padding: 10px 0;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+    }
+
+    .meter-toggle { width: 100%; }
+
+    .meter {
+      width: 30px;
+      height: 210px;
+      padding: 8px 6px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,251,246,0.92) 0%, rgba(238,224,204,0.82) 100%);
+      border: 1px solid rgba(197,171,131,0.44);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.70), 0 6px 14px rgba(136,96,34,0.06);
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 4px;
+    }
+
+    .meter-bar {
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(202,181,143,0.60) 0%, rgba(182,158,122,0.34) 100%);
+      transition: all 320ms ease;
+    }
+
+    .meter-bar.active {
+      background: linear-gradient(180deg, #e6cf97 0%, #b29052 100%);
+      box-shadow: 0 0 10px rgba(178, 144, 82, 0.16);
+    }
+
+    .magic-button {
+      min-width: 124px;
+      height: 34px;
+      padding: 0 18px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+    }
+
+    .preset-buttons {
+      position: absolute;
+      left: 28px;
+      right: 28px;
+      bottom: 18px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .preset-buttons button {
+      flex: 1;
+      height: 44px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+    }
+  </style>
+</head>
+<body>
+  <div class="plugin">
+    <div class="header">
+      <div>
+        <h1 class="title">NOVA COMP</h1>
+        <div class="subtitle">OPTICAL DYNAMICS PROCESSOR</div>
+      </div>
+      <div class="tagline">by International Nova</div>
+    </div>
+
+    <div class="inner-panel">
+      <div class="triangle-layout">
+        <div class="hero-zone">
+          <div class="section-label">COMPRESSION</div>
+          <div class="knob-wrap">
+            <div class="knob hero" data-param="compression" data-min="0" data-max="10">
+              <div class="feedback-ring"></div>
+            </div>
+            <div class="readout" data-readout="compression">4.0</div>
+          </div>
+          <div class="mode-buttons">
+            <button class="active" data-mode="SMOOTH">SMOOTH</button>
+            <button data-mode="PUNCH">PUNCH</button>
+            <button data-mode="LIMIT">LIMIT</button>
+          </div>
+        </div>
+
+        <div class="bottom-row">
+          <div class="knob-wrap">
+            <div class="section-label">TONE SHAPING</div>
+            <div class="knob medium" data-param="tone" data-min="0" data-max="10">
+              <div class="feedback-ring"></div>
+            </div>
+            <div class="readout" data-readout="tone">+0.0</div>
+          </div>
+
+          <div class="knob-wrap">
+            <div class="section-label">OUTPUT</div>
+            <div class="knob medium" data-param="output" data-min="-12" data-max="12">
+              <div class="feedback-ring"></div>
+            </div>
+            <div class="readout" data-readout="output">+0.0 dB</div>
+          </div>
+        </div>
+
+        <div class="output-zone">
+          <div class="meter-toggle">
+            <button class="active" data-meter="GR">GR</button>
+            <button data-meter="OUT">OUT</button>
+          </div>
+          <div class="meter" id="meter">
+            <span class="meter-bar"></span>
+            <span class="meter-bar"></span>
+            <span class="meter-bar"></span>
+            <span class="meter-bar"></span>
+            <span class="meter-bar"></span>
+            <span class="meter-bar"></span>
+            <span class="meter-bar"></span>
+            <span class="meter-bar"></span>
+            <span class="meter-bar"></span>
+            <span class="meter-bar"></span>
+          </div>
+          <button id="magic-toggle" class="magic-button" type="button">MAGIC</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="preset-buttons">
+      <button data-preset="VOCAL">VOCAL</button>
+      <button data-preset="BASS">BASS</button>
+      <button data-preset="DRUMS">DRUMS</button>
+      <button data-preset="MASTER">MASTER</button>
+    </div>
+  </div>
+
+  <script>
+    const values = { compression: 4.0, tone: 5.0, output: 0.0, mode: 'SMOOTH', meter: 'GR', magic: false };
+    const presets = {
+      VOCAL: { mode: 'SMOOTH', compression: 4.5, tone: 5.5, output: 2.0 },
+      BASS: { mode: 'SMOOTH', compression: 5.8, tone: 4.0, output: 2.5 },
+      DRUMS: { mode: 'PUNCH', compression: 6.0, tone: 5.0, output: 1.5 },
+      MASTER: { mode: 'SMOOTH', compression: 2.8, tone: 5.0, output: 0.0 }
+    };
+
+    function clamp(v, min, max) { return Math.min(max, Math.max(min, Number(v) || 0)); }
+
+    function formatValue(param, value) {
+      if (param === 'output') return `${value >= 0 ? '+' : ''}${value.toFixed(1)} dB`;
+      if (param === 'tone') {
+        const tilt = -3 + (value / 10) * 6;
+        return `${tilt >= 0 ? '+' : ''}${tilt.toFixed(1)}`;
+      }
+      return value.toFixed(1);
+    }
+
+    function updateKnob(param, value) {
+      values[param] = value;
+      const knob = document.querySelector(`.knob[data-param="${param}"]`);
+      if (!knob) return;
+      const min = Number(knob.dataset.min);
+      const max = Number(knob.dataset.max);
+      const safe = clamp(value, min, max);
+      const normal = (safe - min) / ((max - min) || 1);
+      const rotation = -42 + normal * 210;
+      knob.querySelector('.feedback-ring').style.setProperty('--turn', rotation + 'deg');
+      const readout = document.querySelector(`[data-readout="${param}"]`);
+      if (readout) readout.textContent = formatValue(param, safe);
+      updateMeter();
+    }
+
+    function setMode(mode) {
+      values.mode = mode;
+      document.querySelectorAll('[data-mode]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.mode === mode);
+      });
+      updateMeter();
+    }
+
+    function setMeter(mode) {
+      values.meter = mode;
+      document.querySelectorAll('[data-meter]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.meter === mode);
+      });
+      updateMeter();
+    }
+
+    function setMagic(on) {
+      values.magic = !!on;
+      document.getElementById('magic-toggle').classList.toggle('active', values.magic);
+      updateMeter();
+    }
+
+    function updateMeter() {
+      const bars = Array.from(document.querySelectorAll('.meter-bar'));
+      const base = values.meter === 'GR'
+        ? Math.round(1 + values.compression * 0.7 + (values.mode === 'LIMIT' ? 2 : values.mode === 'PUNCH' ? 1 : 0))
+        : Math.round(4 + Math.max(0, values.output) * 0.35);
+      const count = clamp(base + (values.magic ? 1 : 0), 0, bars.length);
+      bars.forEach((bar, i) => bar.classList.toggle('active', i < count));
+    }
+
+    function clearPresetState() {
+      document.querySelectorAll('[data-preset]').forEach((button) => button.classList.remove('active'));
+    }
+
+    function applyPreset(name) {
+      const preset = presets[name];
+      if (!preset) return;
+      clearPresetState();
+      document.querySelector(`[data-preset="${name}"]`).classList.add('active');
+      setMode(preset.mode);
+      updateKnob('compression', preset.compression);
+      updateKnob('tone', preset.tone);
+      updateKnob('output', preset.output);
+    }
+
+    document.querySelectorAll('.knob').forEach((knob) => {
+      const param = knob.dataset.param;
+      const min = Number(knob.dataset.min);
+      const max = Number(knob.dataset.max);
+      let dragging = false;
+      let startY = 0;
+      let startValue = 0;
+
+      const move = (clientY) => {
+        const delta = startY - clientY;
+        const range = max - min;
+        const next = clamp(startValue + delta * (range / 180), min, max);
+        updateKnob(param, next);
+        clearPresetState();
+      };
+
+      knob.addEventListener('pointerdown', (event) => {
+        dragging = true;
+        startY = event.clientY;
+        startValue = values[param];
+        knob.setPointerCapture(event.pointerId);
+      });
+
+      knob.addEventListener('pointermove', (event) => {
+        if (dragging) move(event.clientY);
+      });
+
+      knob.addEventListener('pointerup', () => { dragging = false; });
+      knob.addEventListener('pointercancel', () => { dragging = false; });
+    });
+
+    document.querySelectorAll('[data-mode]').forEach((button) => {
+      button.addEventListener('click', () => { clearPresetState(); setMode(button.dataset.mode); });
+    });
+
+    document.querySelectorAll('[data-meter]').forEach((button) => {
+      button.addEventListener('click', () => setMeter(button.dataset.meter));
+    });
+
+    document.getElementById('magic-toggle').addEventListener('click', () => setMagic(!values.magic));
+    document.querySelectorAll('[data-preset]').forEach((button) => {
+      button.addEventListener('click', () => applyPreset(button.dataset.preset));
+    });
+
+    updateKnob('compression', values.compression);
+    updateKnob('tone', values.tone);
+    updateKnob('output', values.output);
+    setMode(values.mode);
+    setMeter(values.meter);
+    setMagic(false);
+  </script>
+</body>
+</html>
