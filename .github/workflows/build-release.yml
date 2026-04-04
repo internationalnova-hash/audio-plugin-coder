@@ -1,6 +1,9 @@
 name: Build & Publish Plugin
 
 on:
+  push:
+    tags:
+      - 'space-by-nova-macos-v*'
   workflow_dispatch:
     inputs:
       plugin:
@@ -54,7 +57,9 @@ jobs:
       - name: Set plugin matrix
         id: set-matrix
         run: |
-          if [ "${{ inputs.plugin }}" == "all" ]; then
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo 'matrix={"plugin":["Space By Nova"]}' >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.plugin }}" == "all" ]; then
             echo 'matrix={"plugin":["CloudWash","gnarly2","nf_gnarly","Space By Nova"]}' >> $GITHUB_OUTPUT
           else
             echo 'matrix={"plugin":["${{ inputs.plugin }}"]}' >> $GITHUB_OUTPUT
@@ -116,7 +121,7 @@ jobs:
   # ============================================
   build-macos:
     needs: setup
-    if: inputs.platforms == 'all' || inputs.platforms == 'macos'
+    if: github.event_name == 'push' || inputs.platforms == 'all' || inputs.platforms == 'macos'
     runs-on: macos-latest
     strategy:
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
