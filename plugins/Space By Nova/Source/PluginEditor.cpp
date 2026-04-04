@@ -16,10 +16,13 @@ SpaceByNovaAudioProcessorEditor::SpaceByNovaAudioProcessorEditor (SpaceByNovaAud
     modeAttachment = std::make_unique<juce::WebSliderParameterAttachment> (*processorRef.apvts.getParameter ("nova_mode"), modeRelay, nullptr);
 
     addAndMakeVisible (*webView);
-    webView->goToURL (juce::WebBrowserComponent::getResourceProviderRoot());
+
+    const auto cacheBustedUrl = juce::WebBrowserComponent::getResourceProviderRoot()
+                              + "/index.html?v=" + juce::String (juce::Time::getCurrentTime().toMilliseconds());
+    webView->goToURL (cacheBustedUrl);
 
     setResizable (false, false);
-    setSize (1040, 610);
+    setSize (960, 560);
 }
 
 SpaceByNovaAudioProcessorEditor::~SpaceByNovaAudioProcessorEditor() = default;
@@ -48,7 +51,6 @@ juce::WebBrowserComponent::Options SpaceByNovaAudioProcessorEditor::createWebOpt
    #endif
 
     options = options.withNativeIntegrationEnabled()
-                     .withKeepPageLoadedWhenBrowserIsHidden()
                      .withResourceProvider ([&editor] (const juce::String& url)
                      {
                          return editor.getResource (url);
@@ -77,6 +79,7 @@ std::optional<juce::WebBrowserComponent::Resource> SpaceByNovaAudioProcessorEdit
     };
 
     auto resourcePath = url.fromFirstOccurrenceOf (juce::WebBrowserComponent::getResourceProviderRoot(), false, false);
+    resourcePath = resourcePath.upToFirstOccurrenceOf ("?", false, false);
 
     if (resourcePath.isEmpty() || resourcePath == "/")
         resourcePath = "/index.html";
