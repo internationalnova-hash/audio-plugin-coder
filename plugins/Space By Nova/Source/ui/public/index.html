@@ -16,6 +16,9 @@
       --gold-pale: #edd18c;
       --white: #fffdf8;
       --ease: 220ms cubic-bezier(0.22, 1, 0.36, 1);
+      --base-width: 1200px;
+      --base-height: 700px;
+      --ui-scale: 0.86;
     }
 
     * { box-sizing: border-box; }
@@ -39,10 +42,18 @@
       justify-content: center;
     }
 
-    .plugin {
+    .stage {
       position: relative;
-      width: 1200px;
-      height: 700px;
+      width: calc(var(--base-width) * var(--ui-scale));
+      height: calc(var(--base-height) * var(--ui-scale));
+      overflow: hidden;
+    }
+
+    .plugin {
+      position: absolute;
+      inset: 0;
+      width: var(--base-width);
+      height: var(--base-height);
       background: linear-gradient(180deg, #f7f3ed 0%, #efeae2 100%);
       border: 2px solid var(--panel-line);
       border-radius: 40px;
@@ -51,6 +62,8 @@
         0 18px 40px rgba(118, 96, 66, 0.14),
         inset 0 1px 0 rgba(255,255,255,0.78),
         inset 0 -8px 18px rgba(188, 168, 138, 0.12);
+      transform: scale(var(--ui-scale));
+      transform-origin: top left;
     }
 
     .plugin::before {
@@ -177,6 +190,8 @@
       overflow: visible;
       cursor: ns-resize;
       user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
       transition: transform var(--ease), box-shadow var(--ease), filter var(--ease);
     }
 
@@ -205,18 +220,7 @@
     }
 
     .knob-shell::after {
-      content: "";
-      position: absolute;
-      inset: 26%;
-      border-radius: 50%;
-      background:
-        radial-gradient(circle at 32% 28%, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.22) 26%, transparent 34%),
-        linear-gradient(180deg, #efe4d3 0%, #e3d3bb 100%);
-      box-shadow:
-        inset 0 1px 1px rgba(255,255,255,0.7),
-        inset 0 -4px 7px rgba(149, 115, 62, 0.10);
-      pointer-events: none;
-      opacity: 0.96;
+      content: none;
     }
 
     .knob-shell.large {
@@ -259,14 +263,14 @@
     .indicator::after {
       content: "";
       position: absolute;
-      left: calc(50% - 5px);
-      top: 12%;
-      width: 10px;
-      height: 24px;
-      border-radius: 999px;
-      background: linear-gradient(180deg, #f4dfab 0%, #d8a94a 50%, #b78023 100%);
+      width: 18px;
+      height: 18px;
+      left: 21%;
+      top: 8%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #f6e3b5 0%, #dab056 55%, #c08a2a 100%);
       box-shadow:
-        0 0 0 3px rgba(255, 249, 238, 0.9),
+        0 0 0 4px rgba(255, 249, 238, 0.92),
         0 3px 8px rgba(152, 110, 34, 0.18);
     }
 
@@ -285,13 +289,15 @@
     }
 
     .large .indicator::after {
-      left: calc(50% - 6px);
-      top: 11%;
-      width: 12px;
-      height: 30px;
-      background: linear-gradient(180deg, #f5e4b7 0%, #deaf54 50%, #bc8123 100%);
+      width: 24px;
+      height: 24px;
+      right: 6.5%;
+      top: 16%;
+      left: auto;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #f8e6bf 0%, #ddb45f 55%, #c38c2d 100%);
       box-shadow:
-        0 0 0 4px rgba(255, 249, 238, 0.92),
+        0 0 0 5px rgba(255, 249, 238, 0.94),
         0 3px 9px rgba(170, 130, 54, 0.22);
     }
 
@@ -401,6 +407,8 @@
         0 6px 12px rgba(150, 121, 72, 0.08);
       transition: background var(--ease), color var(--ease), box-shadow var(--ease), transform var(--ease), filter var(--ease);
       user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
     }
 
     .mode-button:hover {
@@ -430,7 +438,8 @@
   </style>
 </head>
 <body>
-  <div class="plugin" id="plugin-ui">
+  <div class="stage">
+    <div class="plugin" id="plugin-ui">
     <h1 class="title">NOVA SPACE</h1>
     <div class="subtitle">STUDIO GLOW FOR MODERN VOCALS</div>
     <div class="tagline">by International Nova</div>
@@ -475,8 +484,9 @@
     <button class="mode-button" data-mode="Arena" data-mode-index="1" style="left: 340px; top: 604px;">ARENA</button>
     <button class="mode-button" data-mode="Dream" data-mode-index="2" style="left: 620px; top: 604px;">DREAM</button>
     <button class="mode-button" data-mode="Vintage" data-mode-index="3" style="left: 900px; top: 604px;">VINTAGE</button>
+    </div>
   </div>
 
-  <script type="module" src="./js/index.js"></script>
+  <script src="./js/index.js"></script>
 </body>
 </html>

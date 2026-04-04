@@ -19,7 +19,7 @@ SpaceByNovaAudioProcessorEditor::SpaceByNovaAudioProcessorEditor (SpaceByNovaAud
     webView->goToURL (juce::WebBrowserComponent::getResourceProviderRoot());
 
     setResizable (false, false);
-    setSize (1200, 700);
+    setSize (1040, 610);
 }
 
 SpaceByNovaAudioProcessorEditor::~SpaceByNovaAudioProcessorEditor() = default;

@@ -1,293 +1,436 @@
-let Juce = null;
+(function () {
+  var parameterStates = {};
+  var modeNames = ["Studio", "Arena", "Dream", "Vintage"];
+  var macroParams = ["space", "air", "depth", "mix", "width"];
+  var presets = {
+    Studio:  { space: 18, air: 32, depth: 26, mix: 16, width: 38 },
+    Arena:   { space: 66, air: 60, depth: 70, mix: 28, width: 86 },
+    Dream:   { space: 84, air: 64, depth: 82, mix: 34, width: 90 },
+    Vintage: { space: 42, air: 20, depth: 52, mix: 24, width: 48 }
+  };
 
-const parameterStates = {};
-const modeNames = ["Studio", "Arena", "Dream", "Vintage"];
-const macroParams = ["space", "air", "depth", "mix", "width"];
+  var currentValues = {
+    space: presets.Studio.space,
+    air: presets.Studio.air,
+    depth: presets.Studio.depth,
+    mix: presets.Studio.mix,
+    width: presets.Studio.width
+  };
 
-const presets = {
-  Studio:  { space: 18, air: 32, depth: 26, mix: 16, width: 38 },
-  Arena:   { space: 66, air: 60, depth: 70, mix: 28, width: 86 },
-  Dream:   { space: 84, air: 64, depth: 82, mix: 34, width: 90 },
-  Vintage: { space: 42, air: 20, depth: 52, mix: 24, width: 48 }
-};
+  var juceAvailable = false;
+  var activeDrag = null;
 
-const currentValues = { ...presets.Studio };
-let juceAvailable = false;
-let activeDrag = null;
-
-function clamp(value, min = 0, max = 100) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function moveCaretToEnd(element) {
-  const selection = window.getSelection();
-  const range = document.createRange();
-  range.selectNodeContents(element);
-  range.collapse(false);
-  selection.removeAllRanges();
-  selection.addRange(range);
-}
-
-function updateVisual(param, percent) {
-  const safeValue = clamp(Number(percent) || 0);
-  const knob = document.getElementById(`${param}-knob`);
-  const readout = document.getElementById(`${param}-value`);
-
-  currentValues[param] = safeValue;
-
-  if (knob) {
-    const indicator = knob.querySelector(".indicator");
-    const rotation = -120 + (safeValue / 100) * 240;
-    indicator?.style.setProperty("--rotation", `${rotation}deg`);
+  function clamp(value, min, max) {
+    var safeMin = typeof min === "number" ? min : 0;
+    var safeMax = typeof max === "number" ? max : 100;
+    return Math.min(safeMax, Math.max(safeMin, value));
   }
 
-  if (readout && document.activeElement !== readout) {
-    readout.textContent = `${Math.round(safeValue)}%`;
+  function moveCaretToEnd(element) {
+    if (!window.getSelection || !document.createRange) return;
+
+    var selection = window.getSelection();
+    var range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
   }
-}
 
-function pushToBackend(param, percent, useGesture = false) {
-  const state = parameterStates[param];
-  if (!state) return;
-
-  try {
-    if (useGesture) state.sliderDragStarted();
-    state.setNormalisedValue(clamp(percent) / 100);
-    if (useGesture) state.sliderDragEnded();
-  } catch (error) {
-    console.warn(`Failed to update ${param}:`, error.message);
+  function getDataAttribute(element, name) {
+    if (!element) return "";
+    if (element.dataset && Object.prototype.hasOwnProperty.call(element.dataset, name)) {
+      return element.dataset[name];
+    }
+    return element.getAttribute("data-" + name) || "";
   }
-}
 
-function setParamPercent(param, percent, options = {}) {
-  const safeValue = clamp(percent);
-  updateVisual(param, safeValue);
+  function updateVisual(param, percent) {
+    var safeValue = clamp(Number(percent) || 0);
+    var knob = document.getElementById(param + "-knob");
+    var readout = document.getElementById(param + "-value");
 
-  if (options.pushToBackend) {
-    pushToBackend(param, safeValue, !!options.useGesture);
+    currentValues[param] = safeValue;
+
+    if (knob) {
+      var indicator = knob.querySelector(".indicator");
+      var rotation = -120 + (safeValue / 100) * 240;
+      if (indicator && indicator.style) {
+        indicator.style.setProperty("--rotation", rotation + "deg");
+      }
+    }
+
+    if (readout && document.activeElement !== readout) {
+      readout.textContent = String(Math.round(safeValue)) + "%";
+    }
   }
-}
 
-function setActiveMode(modeName) {
-  document.querySelectorAll(".mode-button").forEach((button) => {
-    button.classList.toggle("active", button.dataset.mode === modeName);
-  });
-}
+  function createListenerList() {
+    return {
+      listeners: [],
+      addListener: function (fn) {
+        this.listeners.push(fn);
+        return this.listeners.length - 1;
+      },
+      callListeners: function (payload) {
+        for (var i = 0; i < this.listeners.length; i += 1) {
+          this.listeners[i](payload);
+        }
+      }
+    };
+  }
 
-function applyPreset(modeName, pushToBackend = true) {
-  const preset = presets[modeName];
-  if (!preset) return;
+  function createSliderState(name) {
+    if (!juceAvailable || !window.__JUCE__ || !window.__JUCE__.backend) return null;
 
-  setActiveMode(modeName);
+    var backend = window.__JUCE__.backend;
+    var state = {
+      name: name,
+      identifier: "__juce__slider" + name,
+      scaledValue: 0,
+      properties: {
+        start: 0,
+        end: 1,
+        skew: 1,
+        interval: 0,
+        numSteps: 100
+      },
+      valueChangedEvent: createListenerList(),
+      getNormalisedValue: function () {
+        var start = typeof this.properties.start === "number" ? this.properties.start : 0;
+        var end = typeof this.properties.end === "number" ? this.properties.end : 1;
+        var range = end - start;
 
-  macroParams.forEach((param) => {
-    setParamPercent(param, preset[param], { pushToBackend });
-  });
+        if (range === 0) return 0;
+        return clamp((this.scaledValue - start) / range, 0, 1);
+      },
+      setNormalisedValue: function (newValue) {
+        var normalised = clamp(newValue, 0, 1);
+        var start = typeof this.properties.start === "number" ? this.properties.start : 0;
+        var end = typeof this.properties.end === "number" ? this.properties.end : 1;
+        var interval = typeof this.properties.interval === "number" ? this.properties.interval : 0;
+        var scaled = start + (normalised * (end - start));
 
-  if (pushToBackend && parameterStates.nova_mode) {
+        if (interval > 0) {
+          scaled = Math.round(scaled / interval) * interval;
+        }
+
+        this.scaledValue = scaled;
+        backend.emitEvent(this.identifier, {
+          eventType: "valueChanged",
+          value: scaled
+        });
+      },
+      sliderDragStarted: function () {
+        backend.emitEvent(this.identifier, { eventType: "sliderDragStarted" });
+      },
+      sliderDragEnded: function () {
+        backend.emitEvent(this.identifier, { eventType: "sliderDragEnded" });
+      }
+    };
+
+    backend.addEventListener(state.identifier, function (event) {
+      if (!event) return;
+
+      if (event.eventType === "valueChanged") {
+        if (typeof event.value === "number") {
+          state.scaledValue = event.value;
+        }
+        state.valueChangedEvent.callListeners(event);
+      }
+
+      if (event.eventType === "propertiesChanged") {
+        var updatedProperties = {};
+        for (var key in event) {
+          if (Object.prototype.hasOwnProperty.call(event, key) && key !== "eventType") {
+            updatedProperties[key] = event[key];
+          }
+        }
+        state.properties = updatedProperties;
+      }
+    });
+
+    backend.emitEvent(state.identifier, { eventType: "requestInitialUpdate" });
+    return state;
+  }
+
+  function pushToBackend(param, percent, useGesture) {
+    var state = parameterStates[param];
+    if (!state) return;
+
     try {
-      const modeIndex = modeNames.indexOf(modeName);
-      parameterStates.nova_mode.setNormalisedValue(modeIndex / (modeNames.length - 1));
+      if (useGesture) state.sliderDragStarted();
+      state.setNormalisedValue(clamp(percent) / 100);
+      if (useGesture) state.sliderDragEnded();
     } catch (error) {
-      console.warn("Failed to set mode:", error.message);
+      console.warn("Failed to update " + param + ":", error && error.message ? error.message : error);
     }
   }
-}
 
-function initialiseParameterStates() {
-  if (!juceAvailable || !Juce) return;
+  function setParamPercent(param, percent, options) {
+    var safeValue = clamp(percent);
+    var settings = options || {};
 
-  [...macroParams, "nova_mode"].forEach((param) => {
-    try {
-      parameterStates[param] = Juce.getSliderState(param);
-    } catch (error) {
-      console.warn(`Could not create slider state for ${param}:`, error.message);
+    updateVisual(param, safeValue);
+
+    if (settings.pushToBackend) {
+      pushToBackend(param, safeValue, !!settings.useGesture);
     }
-  });
+  }
 
-  macroParams.forEach((param) => {
-    const state = parameterStates[param];
-    if (!state?.valueChangedEvent) return;
-
-    state.valueChangedEvent.addListener(() => {
-      updateVisual(param, state.getNormalisedValue() * 100);
-    });
-  });
-
-  if (parameterStates.nova_mode?.valueChangedEvent) {
-    parameterStates.nova_mode.valueChangedEvent.addListener(() => {
-      const modeIndex = Math.round(parameterStates.nova_mode.getNormalisedValue() * (modeNames.length - 1));
-      setActiveMode(modeNames[clamp(modeIndex, 0, modeNames.length - 1)]);
+  function setActiveMode(modeName) {
+    var buttons = document.querySelectorAll(".mode-button");
+    Array.prototype.forEach.call(buttons, function (button) {
+      button.classList.toggle("active", getDataAttribute(button, "mode") === modeName);
     });
   }
 
-  window.setTimeout(() => {
-    macroParams.forEach((param) => {
-      const state = parameterStates[param];
-      if (state) updateVisual(param, state.getNormalisedValue() * 100);
+  function applyPreset(modeName, pushModeToBackend) {
+    var preset = presets[modeName];
+    var shouldPush = pushModeToBackend !== false;
+
+    if (!preset) return;
+
+    setActiveMode(modeName);
+
+    Array.prototype.forEach.call(macroParams, function (param) {
+      setParamPercent(param, preset[param], { pushToBackend: shouldPush });
     });
 
-    if (parameterStates.nova_mode) {
-      const modeIndex = Math.round(parameterStates.nova_mode.getNormalisedValue() * (modeNames.length - 1));
-      setActiveMode(modeNames[clamp(modeIndex, 0, modeNames.length - 1)]);
+    if (shouldPush && parameterStates.nova_mode) {
+      try {
+        var modeIndex = modeNames.indexOf(modeName);
+        parameterStates.nova_mode.setNormalisedValue(modeIndex / (modeNames.length - 1));
+      } catch (error) {
+        console.warn("Failed to set mode:", error && error.message ? error.message : error);
+      }
     }
-  }, 50);
-}
-
-function finishActiveDrag(pointerId = null) {
-  if (!activeDrag) return;
-
-  if (pointerId !== null && activeDrag.pointerId !== null && pointerId !== activeDrag.pointerId) {
-    return;
   }
 
-  const state = parameterStates[activeDrag.param];
-  if (state) {
-    try { state.sliderDragEnded(); } catch (error) { console.warn(error.message); }
+  function initialiseParameterStates() {
+    if (!juceAvailable) return;
+
+    Array.prototype.forEach.call(macroParams.concat(["nova_mode"]), function (param) {
+      parameterStates[param] = createSliderState(param);
+    });
+
+    Array.prototype.forEach.call(macroParams, function (param) {
+      var state = parameterStates[param];
+      if (!state || !state.valueChangedEvent) return;
+
+      state.valueChangedEvent.addListener(function () {
+        updateVisual(param, state.getNormalisedValue() * 100);
+      });
+    });
+
+    if (parameterStates.nova_mode && parameterStates.nova_mode.valueChangedEvent) {
+      parameterStates.nova_mode.valueChangedEvent.addListener(function () {
+        var modeIndex = Math.round(parameterStates.nova_mode.getNormalisedValue() * (modeNames.length - 1));
+        setActiveMode(modeNames[clamp(modeIndex, 0, modeNames.length - 1)]);
+      });
+    }
+
+    window.setTimeout(function () {
+      Array.prototype.forEach.call(macroParams, function (param) {
+        var state = parameterStates[param];
+        if (state) {
+          updateVisual(param, state.getNormalisedValue() * 100);
+        }
+      });
+
+      if (parameterStates.nova_mode) {
+        var modeIndex = Math.round(parameterStates.nova_mode.getNormalisedValue() * (modeNames.length - 1));
+        setActiveMode(modeNames[clamp(modeIndex, 0, modeNames.length - 1)]);
+      }
+    }, 60);
   }
 
-  if (typeof activeDrag.knob.releasePointerCapture === "function" && activeDrag.pointerId !== null) {
-    try { activeDrag.knob.releasePointerCapture(activeDrag.pointerId); } catch (error) { console.warn(error.message); }
+  function getClientY(event) {
+    if (!event) return 0;
+    if (event.touches && event.touches.length > 0) return event.touches[0].clientY;
+    if (event.changedTouches && event.changedTouches.length > 0) return event.changedTouches[0].clientY;
+    return typeof event.clientY === "number" ? event.clientY : 0;
   }
 
-  activeDrag.knob.classList.remove("dragging");
-  activeDrag = null;
-}
+  function startDrag(param, knob, event, defaultPercent) {
+    if (event && typeof event.button === "number" && event.button !== 0) return;
 
-function initialiseKnobs() {
-  document.querySelectorAll(".macro-knob").forEach((knob) => {
-    const param = knob.dataset.param;
-    const defaultPercent = Number(knob.dataset.default || 0);
+    if (event && event.preventDefault) event.preventDefault();
+    if (event && event.stopPropagation) event.stopPropagation();
 
-    updateVisual(param, currentValues[param] ?? defaultPercent);
+    knob.classList.add("dragging");
+    activeDrag = {
+      param: param,
+      knob: knob,
+      pointerId: event && typeof event.pointerId !== "undefined" ? event.pointerId : null,
+      startY: getClientY(event),
+      startValue: typeof currentValues[param] === "number" ? currentValues[param] : defaultPercent
+    };
 
-    knob.addEventListener("pointerdown", (event) => {
-      if (event.button !== undefined && event.button !== 0) return;
+    if (typeof knob.setPointerCapture === "function" && event && typeof event.pointerId !== "undefined") {
+      try {
+        knob.setPointerCapture(event.pointerId);
+      } catch (error) {
+        console.warn(error && error.message ? error.message : error);
+      }
+    }
 
-      event.preventDefault();
-      event.stopPropagation();
+    if (parameterStates[param]) {
+      try {
+        parameterStates[param].sliderDragStarted();
+      } catch (error) {
+        console.warn(error && error.message ? error.message : error);
+      }
+    }
+  }
 
-      knob.classList.add("dragging");
-      activeDrag = {
-        param,
-        knob,
-        pointerId: event.pointerId ?? null,
-        startY: event.clientY,
-        startValue: currentValues[param] ?? defaultPercent
+  function updateActiveDrag(event) {
+    if (!activeDrag) return;
+    if (activeDrag.pointerId !== null && event && typeof event.pointerId !== "undefined" && event.pointerId !== activeDrag.pointerId) {
+      return;
+    }
+
+    if (event && event.preventDefault) event.preventDefault();
+
+    var deltaY = activeDrag.startY - getClientY(event);
+    var nextValue = clamp(activeDrag.startValue + (deltaY * 0.45));
+    setParamPercent(activeDrag.param, nextValue, { pushToBackend: true });
+  }
+
+  function finishActiveDrag(event) {
+    if (!activeDrag) return;
+    if (activeDrag.pointerId !== null && event && typeof event.pointerId !== "undefined" && event.pointerId !== activeDrag.pointerId) {
+      return;
+    }
+
+    if (parameterStates[activeDrag.param]) {
+      try {
+        parameterStates[activeDrag.param].sliderDragEnded();
+      } catch (error) {
+        console.warn(error && error.message ? error.message : error);
+      }
+    }
+
+    if (typeof activeDrag.knob.releasePointerCapture === "function" && activeDrag.pointerId !== null) {
+      try {
+        activeDrag.knob.releasePointerCapture(activeDrag.pointerId);
+      } catch (error) {
+        console.warn(error && error.message ? error.message : error);
+      }
+    }
+
+    activeDrag.knob.classList.remove("dragging");
+    activeDrag = null;
+  }
+
+  function initialiseKnobs() {
+    var knobs = document.querySelectorAll(".macro-knob");
+
+    Array.prototype.forEach.call(knobs, function (knob) {
+      var param = getDataAttribute(knob, "param");
+      var defaultPercent = Number(getDataAttribute(knob, "default") || 0);
+
+      updateVisual(param, typeof currentValues[param] === "number" ? currentValues[param] : defaultPercent);
+
+      var startHandler = function (event) {
+        startDrag(param, knob, event, defaultPercent);
       };
 
-      if (typeof knob.setPointerCapture === "function" && event.pointerId !== undefined) {
-        try { knob.setPointerCapture(event.pointerId); } catch (error) { console.warn(error.message); }
-      }
+      knob.addEventListener("pointerdown", startHandler);
+      knob.addEventListener("mousedown", startHandler);
+      knob.addEventListener("touchstart", startHandler, { passive: false });
 
-      const state = parameterStates[param];
-      if (state) {
-        try { state.sliderDragStarted(); } catch (error) { console.warn(error.message); }
-      }
+      knob.addEventListener("dblclick", function () {
+        setParamPercent(param, defaultPercent, { pushToBackend: true });
+      });
     });
 
-    knob.addEventListener("dblclick", () => {
-      setParamPercent(param, defaultPercent, { pushToBackend: true });
-    });
-  });
+    document.addEventListener("pointermove", updateActiveDrag);
+    document.addEventListener("mousemove", updateActiveDrag);
+    document.addEventListener("touchmove", updateActiveDrag, { passive: false });
 
-  document.addEventListener("pointermove", (event) => {
-    if (!activeDrag) return;
-    if (activeDrag.pointerId !== null && event.pointerId !== activeDrag.pointerId) return;
-
-    event.preventDefault();
-
-    const deltaY = activeDrag.startY - event.clientY;
-    const nextValue = clamp(activeDrag.startValue + (deltaY * 0.45));
-    setParamPercent(activeDrag.param, nextValue, { pushToBackend: true });
-  });
-
-  document.addEventListener("pointerup", (event) => {
-    finishActiveDrag(event.pointerId ?? null);
-  });
-
-  document.addEventListener("pointercancel", (event) => {
-    finishActiveDrag(event.pointerId ?? null);
-  });
-}
-
-function initialiseReadouts() {
-  document.querySelectorAll(".editable-value").forEach((readout) => {
-    const { param } = readout.dataset;
-
-    readout.addEventListener("focus", () => {
-      readout.textContent = `${Math.round(currentValues[param] ?? 0)}`;
-      moveCaretToEnd(readout);
-    });
-
-    readout.addEventListener("input", () => {
-      const cleaned = readout.textContent.replace(/[^0-9.]/g, "");
-      if (readout.textContent !== cleaned) {
-        readout.textContent = cleaned;
-        moveCaretToEnd(readout);
-      }
-    });
-
-    readout.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        readout.blur();
-      }
-
-      if (event.key === "Escape") {
-        event.preventDefault();
-        updateVisual(param, currentValues[param] ?? 0);
-        readout.blur();
-      }
-    });
-
-    readout.addEventListener("blur", () => {
-      const raw = readout.textContent.replace(/[^0-9.]/g, "");
-      const nextValue = raw === "" ? (currentValues[param] ?? 0) : clamp(Number(raw));
-      setParamPercent(param, nextValue, { pushToBackend: true });
-    });
-  });
-}
-
-function initialiseModeButtons() {
-  document.querySelectorAll(".mode-button").forEach((button) => {
-    button.addEventListener("click", () => {
-      applyPreset(button.dataset.mode, true);
-    });
-  });
-}
-
-async function bootUi() {
-  juceAvailable = typeof window.__JUCE__ !== "undefined";
-
-  if (juceAvailable) {
-    try {
-      Juce = await import("./juce/index.js");
-    } catch (error) {
-      juceAvailable = false;
-      console.warn("JUCE bridge unavailable, falling back to preview mode:", error.message);
-    }
+    document.addEventListener("pointerup", finishActiveDrag);
+    document.addEventListener("mouseup", finishActiveDrag);
+    document.addEventListener("touchend", finishActiveDrag);
+    document.addEventListener("pointercancel", finishActiveDrag);
+    document.addEventListener("touchcancel", finishActiveDrag);
+    document.addEventListener("mouseleave", finishActiveDrag);
   }
 
-  initialiseKnobs();
-  initialiseReadouts();
-  initialiseModeButtons();
+  function initialiseReadouts() {
+    var readouts = document.querySelectorAll(".editable-value");
 
-  if (juceAvailable) {
-    try {
-      initialiseParameterStates();
-    } catch (error) {
-      juceAvailable = false;
-      console.warn("Parameter sync unavailable, keeping local UI active:", error.message);
+    Array.prototype.forEach.call(readouts, function (readout) {
+      var param = getDataAttribute(readout, "param");
+
+      readout.addEventListener("focus", function () {
+        readout.textContent = String(Math.round(typeof currentValues[param] === "number" ? currentValues[param] : 0));
+        moveCaretToEnd(readout);
+      });
+
+      readout.addEventListener("input", function () {
+        var cleaned = readout.textContent.replace(/[^0-9.]/g, "");
+        if (readout.textContent !== cleaned) {
+          readout.textContent = cleaned;
+          moveCaretToEnd(readout);
+        }
+      });
+
+      readout.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          readout.blur();
+        }
+
+        if (event.key === "Escape") {
+          event.preventDefault();
+          updateVisual(param, typeof currentValues[param] === "number" ? currentValues[param] : 0);
+          readout.blur();
+        }
+      });
+
+      readout.addEventListener("blur", function () {
+        var raw = readout.textContent.replace(/[^0-9.]/g, "");
+        var nextValue = raw === "" ? (typeof currentValues[param] === "number" ? currentValues[param] : 0) : clamp(Number(raw));
+        setParamPercent(param, nextValue, { pushToBackend: true });
+      });
+    });
+  }
+
+  function initialiseModeButtons() {
+    var buttons = document.querySelectorAll(".mode-button");
+
+    Array.prototype.forEach.call(buttons, function (button) {
+      button.addEventListener("click", function (event) {
+        if (event && event.preventDefault) event.preventDefault();
+        applyPreset(getDataAttribute(button, "mode"), true);
+      });
+    });
+  }
+
+  function bootUi() {
+    juceAvailable = !!(window.__JUCE__ && window.__JUCE__.backend && typeof window.__JUCE__.backend.emitEvent === "function");
+
+    initialiseKnobs();
+    initialiseReadouts();
+    initialiseModeButtons();
+
+    if (juceAvailable) {
+      try {
+        initialiseParameterStates();
+      } catch (error) {
+        juceAvailable = false;
+        console.warn("Parameter sync unavailable, keeping local UI active:", error && error.message ? error.message : error);
+        applyPreset("Studio", false);
+      }
+    } else {
       applyPreset("Studio", false);
     }
-  } else {
-    applyPreset("Studio", false);
   }
-}
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => { void bootUi(); }, { once: true });
-} else {
-  void bootUi();
-}
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootUi, { once: true });
+  } else {
+    bootUi();
+  }
+}());
