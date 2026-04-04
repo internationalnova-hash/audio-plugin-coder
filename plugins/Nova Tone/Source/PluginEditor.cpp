@@ -26,7 +26,7 @@ NovaToneAudioProcessorEditor::NovaToneAudioProcessorEditor (NovaToneAudioProcess
     webView->goToURL (cacheBustedUrl);
 
     setResizable (false, false);
-    setSize (980, 620);
+    setSize (784, 496);
     startTimerHz (30);
 }
 

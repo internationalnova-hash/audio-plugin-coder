@@ -17,6 +17,7 @@
       --gold-pale: #e5c986;
       --white: #fffaf4;
       --ease: 220ms cubic-bezier(0.22, 1, 0.36, 1);
+      --ui-scale: 0.8;
     }
 
     * { box-sizing: border-box; }
@@ -51,6 +52,8 @@
         inset 0 1px 0 rgba(255,255,255,0.7),
         inset 0 -10px 18px rgba(167, 140, 99, 0.10);
       overflow: hidden;
+      transform: scale(var(--ui-scale));
+      transform-origin: center center;
     }
 
     .plugin::before {
@@ -158,6 +161,9 @@
       cursor: pointer;
       transition: all var(--ease);
       user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
     .option.active {
@@ -360,6 +366,10 @@
       letter-spacing: 0.18em;
       cursor: pointer;
       transition: all var(--ease);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
     .mode-button.active {
@@ -498,18 +508,92 @@
     </div>
   </div>
 
-  <script type="module">
-    import * as Juce from "./js/juce/index.js";
+  <script>
+    (function () {
+      const choiceOptions = {
+        low_freq: ["20", "30", "60", "100"],
+        high_boost_freq: ["3k", "4k", "5k", "8k", "10k", "12k", "16k"],
+        high_attenuation_freq: ["5k", "10k", "20k"],
+        mode_preset: ["Neutral", "Vocal", "Bass", "Air", "Master"]
+      };
 
-    const choiceOptions = {
-      low_freq: ["20", "30", "60", "100"],
-      high_boost_freq: ["3k", "4k", "5k", "8k", "10k", "12k", "16k"],
-      high_attenuation_freq: ["5k", "10k", "20k"],
-      mode_preset: ["Neutral", "Vocal", "Bass", "Air", "Master"]
-    };
+      const knobParamIds = ["low_boost", "low_attenuation", "high_boost", "bandwidth", "high_attenuation", "output_gain"];
+      const selectorParamIds = ["low_freq", "high_boost_freq", "high_attenuation_freq"];
+      const allParamIds = selectorParamIds.concat(knobParamIds, ["mode_preset"]);
 
-    const presets = {
-      Neutral: {
+      const presets = {
+        Neutral: {
+          low_freq: "60",
+          low_boost: 0.0,
+          low_attenuation: 0.0,
+          high_boost_freq: "8k",
+          high_boost: 0.0,
+          bandwidth: 5.0,
+          high_attenuation_freq: "10k",
+          high_attenuation: 0.0,
+          output_gain: 0.0,
+          note: "Neutral tone state ready for musical shaping."
+        },
+        Vocal: {
+          low_freq: "100",
+          low_boost: 2.0,
+          low_attenuation: 1.5,
+          high_boost_freq: "10k",
+          high_boost: 5.5,
+          bandwidth: 4.0,
+          high_attenuation_freq: "5k",
+          high_attenuation: 2.0,
+          output_gain: 0.0,
+          note: "Clarity and presence without harshness."
+        },
+        Bass: {
+          low_freq: "60",
+          low_boost: 6.0,
+          low_attenuation: 4.5,
+          high_boost_freq: "3k",
+          high_boost: 1.5,
+          bandwidth: 3.0,
+          high_attenuation_freq: "5k",
+          high_attenuation: 0.0,
+          output_gain: 0.0,
+          note: "Classic Pultec low-end trick for weight and control."
+        },
+        Air: {
+          low_freq: "30",
+          low_boost: 0.0,
+          low_attenuation: 0.0,
+          high_boost_freq: "12k",
+          high_boost: 7.0,
+          bandwidth: 6.0,
+          high_attenuation_freq: "10k",
+          high_attenuation: 2.5,
+          output_gain: 0.0,
+          note: "Expensive top-end shine with smooth polish."
+        },
+        Master: {
+          low_freq: "30",
+          low_boost: 3.0,
+          low_attenuation: 2.0,
+          high_boost_freq: "10k",
+          high_boost: 4.0,
+          bandwidth: 5.0,
+          high_attenuation_freq: "20k",
+          high_attenuation: 1.5,
+          output_gain: 0.0,
+          note: "Subtle glue and broad tonal polish."
+        }
+      };
+
+      const knobIds = {
+        low_boost: "lowBoost-value",
+        low_attenuation: "lowAttenuation-value",
+        high_boost: "highBoost-value",
+        bandwidth: "bandwidth-value",
+        high_attenuation: "highAttenuation-value",
+        output_gain: "outputGain-value"
+      };
+
+      const currentValues = {
         low_freq: "60",
         low_boost: 0.0,
         low_attenuation: 0.0,
@@ -519,360 +603,475 @@
         high_attenuation_freq: "10k",
         high_attenuation: 0.0,
         output_gain: 0.0,
-        note: "Neutral tone state ready for musical shaping."
-      },
-      Vocal: {
-        low_freq: "100",
-        low_boost: 2.0,
-        low_attenuation: 1.5,
-        high_boost_freq: "10k",
-        high_boost: 5.5,
-        bandwidth: 4.0,
-        high_attenuation_freq: "5k",
-        high_attenuation: 2.0,
-        output_gain: 0.0,
-        note: "Clarity and presence without harshness."
-      },
-      Bass: {
-        low_freq: "60",
-        low_boost: 6.0,
-        low_attenuation: 4.5,
-        high_boost_freq: "3k",
-        high_boost: 1.5,
-        bandwidth: 3.0,
-        high_attenuation_freq: "5k",
-        high_attenuation: 0.0,
-        output_gain: 0.0,
-        note: "Classic Pultec low-end trick for weight and control."
-      },
-      Air: {
-        low_freq: "30",
-        low_boost: 0.0,
-        low_attenuation: 0.0,
-        high_boost_freq: "12k",
-        high_boost: 7.0,
-        bandwidth: 6.0,
-        high_attenuation_freq: "10k",
-        high_attenuation: 2.5,
-        output_gain: 0.0,
-        note: "Expensive top-end shine with smooth polish."
-      },
-      Master: {
-        low_freq: "30",
-        low_boost: 3.0,
-        low_attenuation: 2.0,
-        high_boost_freq: "10k",
-        high_boost: 4.0,
-        bandwidth: 5.0,
-        high_attenuation_freq: "20k",
-        high_attenuation: 1.5,
-        output_gain: 0.0,
-        note: "Subtle glue and broad tonal polish."
-      }
-    };
+        mode_preset: "Neutral"
+      };
 
-    const knobIds = {
-      low_boost: "lowBoost-value",
-      low_attenuation: "lowAttenuation-value",
-      high_boost: "highBoost-value",
-      bandwidth: "bandwidth-value",
-      high_attenuation: "highAttenuation-value",
-      output_gain: "outputGain-value"
-    };
+      const parameterStates = {};
+      let juceAvailable = false;
+      let isApplyingPreset = false;
+      let activeDrag = null;
 
-    const currentValues = {
-      low_freq: "60",
-      low_boost: 0.0,
-      low_attenuation: 0.0,
-      high_boost_freq: "8k",
-      high_boost: 0.0,
-      bandwidth: 5.0,
-      high_attenuation_freq: "10k",
-      high_attenuation: 0.0,
-      output_gain: 0.0,
-      mode_preset: "Neutral"
-    };
-
-    const parameterStates = {};
-    let juceAvailable = false;
-    let isApplyingPreset = false;
-    let activeDrag = null;
-
-    function getNormalizedValue(paramId, value) {
-      if (choiceOptions[paramId]) {
-        const options = choiceOptions[paramId];
-        const index = Math.max(0, options.indexOf(String(value)));
-        return options.length <= 1 ? 0 : index / (options.length - 1);
+      function clamp(value, min, max) {
+        const lower = typeof min === "number" ? min : 0;
+        const upper = typeof max === "number" ? max : 1;
+        return Math.min(upper, Math.max(lower, Number(value) || 0));
       }
 
-      switch (paramId) {
-        case "bandwidth":
-          return (value - 1.0) / 9.0;
-        case "output_gain":
-          return (value + 10.0) / 20.0;
-        default:
-          return value / 10.0;
-      }
-    }
+      function getNormalizedValue(paramId, value) {
+        if (choiceOptions[paramId]) {
+          const options = choiceOptions[paramId];
+          const index = Math.max(0, options.indexOf(String(value)));
+          return options.length <= 1 ? 0 : index / (options.length - 1);
+        }
 
-    function getActualValue(paramId, normalized) {
-      const clamped = Math.max(0, Math.min(1, normalized));
-
-      if (choiceOptions[paramId]) {
-        const options = choiceOptions[paramId];
-        const index = Math.round(clamped * (options.length - 1));
-        return options[index];
+        switch (paramId) {
+          case "bandwidth":
+            return clamp((Number(value) - 1.0) / 9.0, 0, 1);
+          case "output_gain":
+            return clamp((Number(value) + 10.0) / 20.0, 0, 1);
+          default:
+            return clamp(Number(value) / 10.0, 0, 1);
+        }
       }
 
-      switch (paramId) {
-        case "bandwidth":
-          return 1.0 + (clamped * 9.0);
-        case "output_gain":
-          return -10.0 + (clamped * 20.0);
-        default:
-          return clamped * 10.0;
-      }
-    }
+      function getActualValue(paramId, normalized) {
+        const clamped = clamp(normalized, 0, 1);
 
-    function formatValue(paramId, value) {
-      if (paramId === "bandwidth") return `BW ${value.toFixed(1)}`;
-      if (paramId === "output_gain") {
-        const sign = value >= 0 ? "+" : "";
-        return `${sign}${value.toFixed(1)} dB`;
-      }
-      return Number(value).toFixed(1);
-    }
+        if (choiceOptions[paramId]) {
+          const options = choiceOptions[paramId];
+          const index = Math.round(clamped * (options.length - 1));
+          return options[index];
+        }
 
-    function setKnobVisual(paramId, value) {
-      currentValues[paramId] = value;
-      const knob = document.querySelector(`.knob[data-param="${paramId}"] .arc`);
-      if (knob) {
-        const rotation = -42 + (getNormalizedValue(paramId, value) * 210);
-        knob.style.setProperty("--turn", `${rotation}deg`);
+        switch (paramId) {
+          case "bandwidth":
+            return 1.0 + (clamped * 9.0);
+          case "output_gain":
+            return -10.0 + (clamped * 20.0);
+          default:
+            return clamped * 10.0;
+        }
       }
 
-      const readout = document.getElementById(knobIds[paramId]);
-      if (readout) readout.textContent = formatValue(paramId, value);
-    }
-
-    function setSelectorVisual(paramId, value) {
-      currentValues[paramId] = value;
-      document.querySelectorAll(`.option[data-param="${paramId}"]`).forEach((option) => {
-        option.classList.toggle("active", option.dataset.value === String(value));
-      });
-    }
-
-    function setModeVisual(modeName) {
-      currentValues.mode_preset = modeName;
-      document.querySelectorAll(".mode-button").forEach((button) => {
-        button.classList.toggle("active", button.dataset.mode === modeName);
-      });
-    }
-
-    function pushParameter(paramId, value) {
-      const state = parameterStates[paramId];
-      if (!state) return;
-      state.setNormalisedValue(getNormalizedValue(paramId, value));
-    }
-
-    function applyPreset(modeName, pushToPlugin = true) {
-      const preset = presets[modeName];
-      if (!preset || isApplyingPreset) return;
-
-      isApplyingPreset = true;
-
-      setSelectorVisual("low_freq", preset.low_freq);
-      setKnobVisual("low_boost", preset.low_boost);
-      setKnobVisual("low_attenuation", preset.low_attenuation);
-      setSelectorVisual("high_boost_freq", preset.high_boost_freq);
-      setKnobVisual("high_boost", preset.high_boost);
-      setKnobVisual("bandwidth", preset.bandwidth);
-      setSelectorVisual("high_attenuation_freq", preset.high_attenuation_freq);
-      setKnobVisual("high_attenuation", preset.high_attenuation);
-      setKnobVisual("output_gain", preset.output_gain);
-      setModeVisual(modeName);
-
-      const note = document.getElementById("left-note");
-      if (note) note.textContent = preset.note;
-
-      if (pushToPlugin) {
-        pushParameter("mode_preset", modeName);
-        pushParameter("low_freq", preset.low_freq);
-        pushParameter("low_boost", preset.low_boost);
-        pushParameter("low_attenuation", preset.low_attenuation);
-        pushParameter("high_boost_freq", preset.high_boost_freq);
-        pushParameter("high_boost", preset.high_boost);
-        pushParameter("bandwidth", preset.bandwidth);
-        pushParameter("high_attenuation_freq", preset.high_attenuation_freq);
-        pushParameter("high_attenuation", preset.high_attenuation);
-        pushParameter("output_gain", preset.output_gain);
+      function formatValue(paramId, value) {
+        if (paramId === "bandwidth") return `BW ${Number(value).toFixed(1)}`;
+        if (paramId === "output_gain") {
+          const sign = Number(value) >= 0 ? "+" : "";
+          return `${sign}${Number(value).toFixed(1)} dB`;
+        }
+        return Number(value).toFixed(1);
       }
 
-      isApplyingPreset = false;
-    }
-
-    function bindSelectorButtons() {
-      document.querySelectorAll(".option[data-param]").forEach((option) => {
-        option.addEventListener("click", () => {
-          const { param, value } = option.dataset;
-          setSelectorVisual(param, value);
-          pushParameter(param, value);
-        });
-      });
-    }
-
-    function getClientY(event) {
-      if (!event) return 0;
-      if (event.touches && event.touches.length > 0) return event.touches[0].clientY;
-      if (event.changedTouches && event.changedTouches.length > 0) return event.changedTouches[0].clientY;
-      return typeof event.clientY === "number" ? event.clientY : 0;
-    }
-
-    function handleDragMove(event) {
-      if (!activeDrag) return;
-      if (event?.preventDefault) event.preventDefault();
-
-      const { paramId, min, max, startY, startValue } = activeDrag;
-      const delta = startY - getClientY(event);
-      const nextValue = Math.max(min, Math.min(max, startValue + (delta * (max - min) * 0.005)));
-      setKnobVisual(paramId, nextValue);
-      pushParameter(paramId, nextValue);
-    }
-
-    function endActiveDrag() {
-      if (!activeDrag) return;
-
-      const { paramId, knob } = activeDrag;
-      knob.classList.remove("dragging");
-      parameterStates[paramId]?.sliderDragEnded?.();
-      activeDrag = null;
-    }
-
-    function bindKnobs() {
-      document.querySelectorAll(".knob[data-param]").forEach((knob) => {
-        const paramId = knob.dataset.param;
-        const min = Number(knob.dataset.min);
-        const max = Number(knob.dataset.max);
-
-        const startDrag = (event) => {
-          if (typeof event.button === "number" && event.button !== 0) return;
-          if (event?.preventDefault) event.preventDefault();
-          if (event?.stopPropagation) event.stopPropagation();
-
-          knob.classList.add("dragging");
-          activeDrag = {
-            paramId,
-            knob,
-            min,
-            max,
-            startY: getClientY(event),
-            startValue: Number(currentValues[paramId])
-          };
-
-          if (typeof knob.setPointerCapture === "function" && typeof event.pointerId !== "undefined") {
-            try { knob.setPointerCapture(event.pointerId); } catch {}
+      function createListenerList() {
+        return {
+          listeners: [],
+          addListener(fn) {
+            this.listeners.push(fn);
+            return this.listeners.length - 1;
+          },
+          callListeners(payload) {
+            this.listeners.forEach((listener) => listener(payload));
           }
+        };
+      }
 
-          parameterStates[paramId]?.sliderDragStarted?.();
+      function createSliderState(name) {
+        if (!juceAvailable || !window.__JUCE__ || !window.__JUCE__.backend) return null;
+
+        const backend = window.__JUCE__.backend;
+        const state = {
+          name,
+          identifier: `__juce__slider${name}`,
+          scaledValue: 0,
+          properties: {
+            start: 0,
+            end: 1,
+            skew: 1,
+            interval: 0,
+            numSteps: 100
+          },
+          valueChangedEvent: createListenerList(),
+          getNormalisedValue() {
+            const start = typeof this.properties.start === "number" ? this.properties.start : 0;
+            const end = typeof this.properties.end === "number" ? this.properties.end : 1;
+            const range = end - start;
+            if (range === 0) return 0;
+            return clamp((this.scaledValue - start) / range, 0, 1);
+          },
+          setNormalisedValue(newValue) {
+            const normalised = clamp(newValue, 0, 1);
+            const start = typeof this.properties.start === "number" ? this.properties.start : 0;
+            const end = typeof this.properties.end === "number" ? this.properties.end : 1;
+            const interval = typeof this.properties.interval === "number" ? this.properties.interval : 0;
+            let scaled = start + (normalised * (end - start));
+
+            if (interval > 0) {
+              scaled = Math.round(scaled / interval) * interval;
+            }
+
+            this.scaledValue = scaled;
+            backend.emitEvent(this.identifier, {
+              eventType: "valueChanged",
+              value: scaled
+            });
+          },
+          sliderDragStarted() {
+            backend.emitEvent(this.identifier, { eventType: "sliderDragStarted" });
+          },
+          sliderDragEnded() {
+            backend.emitEvent(this.identifier, { eventType: "sliderDragEnded" });
+          }
         };
 
-        knob.addEventListener("pointerdown", startDrag);
-        knob.addEventListener("mousedown", startDrag);
-        knob.addEventListener("touchstart", startDrag, { passive: false });
+        backend.addEventListener(state.identifier, (event) => {
+          if (!event) return;
 
-        knob.addEventListener("dblclick", () => {
-          const defaultValue = presets[currentValues.mode_preset]?.[paramId] ?? currentValues[paramId];
-          setKnobVisual(paramId, defaultValue);
-          pushParameter(paramId, defaultValue);
+          if (event.eventType === "valueChanged") {
+            if (typeof event.value === "number") {
+              state.scaledValue = event.value;
+            }
+            state.valueChangedEvent.callListeners(event);
+          }
+
+          if (event.eventType === "propertiesChanged") {
+            const nextProperties = {};
+            Object.keys(event).forEach((key) => {
+              if (key !== "eventType") {
+                nextProperties[key] = event[key];
+              }
+            });
+            state.properties = nextProperties;
+          }
         });
-      });
 
-      window.addEventListener("pointermove", handleDragMove, { passive: false });
-      window.addEventListener("mousemove", handleDragMove, { passive: false });
-      window.addEventListener("touchmove", handleDragMove, { passive: false });
-      window.addEventListener("pointerup", endActiveDrag);
-      window.addEventListener("mouseup", endActiveDrag);
-      window.addEventListener("touchend", endActiveDrag);
-      window.addEventListener("touchcancel", endActiveDrag);
-    }
+        backend.emitEvent(state.identifier, { eventType: "requestInitialUpdate" });
+        return state;
+      }
 
-    function bindModeButtons() {
-      document.querySelectorAll(".mode-button").forEach((button) => {
-        button.addEventListener("click", () => applyPreset(button.dataset.mode, true));
-      });
-    }
+      function setKnobVisual(paramId, value) {
+        const numericValue = Number(value);
+        currentValues[paramId] = numericValue;
 
-    function connectParameters() {
-      if (!juceAvailable) return;
-
-      const ids = [
-        "low_freq",
-        "low_boost",
-        "low_attenuation",
-        "high_boost_freq",
-        "high_boost",
-        "bandwidth",
-        "high_attenuation_freq",
-        "high_attenuation",
-        "output_gain",
-        "mode_preset"
-      ];
-
-      ids.forEach((id) => {
-        try {
-          parameterStates[id] = Juce.getSliderState(id);
-        } catch (error) {
-          console.warn(`Failed to connect parameter ${id}:`, error);
+        const knob = document.querySelector(`.knob[data-param="${paramId}"] .arc`);
+        if (knob) {
+          const rotation = -42 + (getNormalizedValue(paramId, numericValue) * 210);
+          knob.style.setProperty("--turn", `${rotation}deg`);
         }
-      });
 
-      ["low_boost", "low_attenuation", "high_boost", "bandwidth", "high_attenuation", "output_gain"].forEach((id) => {
-        const state = parameterStates[id];
-        if (!state) return;
-        state.addValueChangedListener(() => {
-          if (isApplyingPreset) return;
-          setKnobVisual(id, getActualValue(id, state.getNormalisedValue()));
-        });
-        setKnobVisual(id, getActualValue(id, state.getNormalisedValue()));
-      });
+        const readout = document.getElementById(knobIds[paramId]);
+        if (readout) {
+          readout.textContent = formatValue(paramId, numericValue);
+        }
+      }
 
-      ["low_freq", "high_boost_freq", "high_attenuation_freq"].forEach((id) => {
-        const state = parameterStates[id];
-        if (!state) return;
-        state.addValueChangedListener(() => {
-          if (isApplyingPreset) return;
-          setSelectorVisual(id, getActualValue(id, state.getNormalisedValue()));
-        });
-        setSelectorVisual(id, getActualValue(id, state.getNormalisedValue()));
-      });
+      function setSelectorVisual(paramId, value) {
+        const safeValue = String(value);
+        currentValues[paramId] = safeValue;
 
-      const modeState = parameterStates.mode_preset;
-      if (modeState) {
-        modeState.addValueChangedListener(() => {
-          const modeName = getActualValue("mode_preset", modeState.getNormalisedValue());
-          if (!isApplyingPreset) applyPreset(modeName, true);
+        document.querySelectorAll(`.option[data-param="${paramId}"]`).forEach((option) => {
+          option.classList.toggle("active", option.dataset.value === safeValue);
         });
       }
-    }
 
-    window.updateOutputMeter = (level, isHot) => {
-      const bars = document.querySelectorAll("#output-meter .meter-bar");
-      const activeCount = Math.round(Math.max(0, Math.min(1, level)) * bars.length);
-      bars.forEach((bar, index) => {
-        bar.classList.toggle("active", index < activeCount);
-        bar.classList.toggle("hot", Boolean(isHot) && index < activeCount);
-      });
-    };
+      function setModeVisual(modeName) {
+        currentValues.mode_preset = modeName;
+        document.querySelectorAll(".mode-button").forEach((button) => {
+          button.classList.toggle("active", button.dataset.mode === modeName);
+        });
+      }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      juceAvailable = typeof window.__JUCE__ !== "undefined";
+      function pushParameter(paramId, value) {
+        const state = parameterStates[paramId];
+        if (!state) return;
 
-      bindSelectorButtons();
-      bindKnobs();
-      bindModeButtons();
-      connectParameters();
-      applyPreset("Neutral", false);
-    });
+        try {
+          state.setNormalisedValue(getNormalizedValue(paramId, value));
+        } catch (error) {
+          console.warn(`Failed to push parameter ${paramId}:`, error && error.message ? error.message : error);
+        }
+      }
+
+      function applyPreset(modeName, pushToPlugin) {
+        const preset = presets[modeName];
+        const shouldPush = pushToPlugin !== false;
+
+        if (!preset || isApplyingPreset) return;
+
+        isApplyingPreset = true;
+
+        setSelectorVisual("low_freq", preset.low_freq);
+        setKnobVisual("low_boost", preset.low_boost);
+        setKnobVisual("low_attenuation", preset.low_attenuation);
+        setSelectorVisual("high_boost_freq", preset.high_boost_freq);
+        setKnobVisual("high_boost", preset.high_boost);
+        setKnobVisual("bandwidth", preset.bandwidth);
+        setSelectorVisual("high_attenuation_freq", preset.high_attenuation_freq);
+        setKnobVisual("high_attenuation", preset.high_attenuation);
+        setKnobVisual("output_gain", preset.output_gain);
+        setModeVisual(modeName);
+
+        const note = document.getElementById("left-note");
+        if (note) {
+          note.textContent = preset.note;
+        }
+
+        if (shouldPush) {
+          pushParameter("mode_preset", modeName);
+          pushParameter("low_freq", preset.low_freq);
+          pushParameter("low_boost", preset.low_boost);
+          pushParameter("low_attenuation", preset.low_attenuation);
+          pushParameter("high_boost_freq", preset.high_boost_freq);
+          pushParameter("high_boost", preset.high_boost);
+          pushParameter("bandwidth", preset.bandwidth);
+          pushParameter("high_attenuation_freq", preset.high_attenuation_freq);
+          pushParameter("high_attenuation", preset.high_attenuation);
+          pushParameter("output_gain", preset.output_gain);
+        }
+
+        isApplyingPreset = false;
+      }
+
+      function bindSelectorButtons() {
+        document.querySelectorAll(".option[data-param]").forEach((option) => {
+          const activate = (event) => {
+            if (event && event.preventDefault) event.preventDefault();
+            const { param, value } = option.dataset;
+            setSelectorVisual(param, value);
+            pushParameter(param, value);
+          };
+
+          option.addEventListener("click", activate);
+          option.addEventListener("touchend", activate);
+        });
+      }
+
+      function getClientY(event) {
+        if (!event) return 0;
+        if (event.touches && event.touches.length > 0) return event.touches[0].clientY;
+        if (event.changedTouches && event.changedTouches.length > 0) return event.changedTouches[0].clientY;
+        return typeof event.clientY === "number" ? event.clientY : 0;
+      }
+
+      function handleDragMove(event) {
+        if (!activeDrag) return;
+        if (activeDrag.pointerId !== null && event && typeof event.pointerId !== "undefined" && event.pointerId !== activeDrag.pointerId) {
+          return;
+        }
+
+        if (event && event.preventDefault) event.preventDefault();
+
+        const { paramId, min, max, startY, startValue } = activeDrag;
+        const delta = startY - getClientY(event);
+        const nextValue = clamp(startValue + (delta * (max - min) * 0.005), min, max);
+        setKnobVisual(paramId, nextValue);
+        pushParameter(paramId, nextValue);
+      }
+
+      function endActiveDrag(event) {
+        if (!activeDrag) return;
+        if (activeDrag.pointerId !== null && event && typeof event.pointerId !== "undefined" && event.pointerId !== activeDrag.pointerId) {
+          return;
+        }
+
+        const { paramId, knob, pointerId } = activeDrag;
+
+        if (parameterStates[paramId] && typeof parameterStates[paramId].sliderDragEnded === "function") {
+          try {
+            parameterStates[paramId].sliderDragEnded();
+          } catch (error) {
+            console.warn(error && error.message ? error.message : error);
+          }
+        }
+
+        if (typeof knob.releasePointerCapture === "function" && pointerId !== null) {
+          try {
+            knob.releasePointerCapture(pointerId);
+          } catch (error) {
+            console.warn(error && error.message ? error.message : error);
+          }
+        }
+
+        knob.classList.remove("dragging");
+        activeDrag = null;
+      }
+
+      function bindKnobs() {
+        document.querySelectorAll(".knob[data-param]").forEach((knob) => {
+          const paramId = knob.dataset.param;
+          const min = Number(knob.dataset.min);
+          const max = Number(knob.dataset.max);
+
+          const startDrag = (event) => {
+            if (event && typeof event.button === "number" && event.button !== 0) return;
+            if (event && event.preventDefault) event.preventDefault();
+            if (event && event.stopPropagation) event.stopPropagation();
+
+            knob.classList.add("dragging");
+            const currentValue = Number(currentValues[paramId]);
+
+            activeDrag = {
+              paramId,
+              knob,
+              min,
+              max,
+              pointerId: event && typeof event.pointerId !== "undefined" ? event.pointerId : null,
+              startY: getClientY(event),
+              startValue: Number.isFinite(currentValue) ? currentValue : min
+            };
+
+            if (typeof knob.setPointerCapture === "function" && event && typeof event.pointerId !== "undefined") {
+              try {
+                knob.setPointerCapture(event.pointerId);
+              } catch (error) {
+                console.warn(error && error.message ? error.message : error);
+              }
+            }
+
+            if (parameterStates[paramId] && typeof parameterStates[paramId].sliderDragStarted === "function") {
+              try {
+                parameterStates[paramId].sliderDragStarted();
+              } catch (error) {
+                console.warn(error && error.message ? error.message : error);
+              }
+            }
+          };
+
+          knob.addEventListener("pointerdown", startDrag);
+          knob.addEventListener("mousedown", startDrag);
+          knob.addEventListener("touchstart", startDrag, { passive: false });
+
+          knob.addEventListener("dblclick", () => {
+            const defaultValue = presets[currentValues.mode_preset] && Object.prototype.hasOwnProperty.call(presets[currentValues.mode_preset], paramId)
+              ? presets[currentValues.mode_preset][paramId]
+              : currentValues[paramId];
+
+            setKnobVisual(paramId, defaultValue);
+            pushParameter(paramId, defaultValue);
+          });
+        });
+
+        document.addEventListener("pointermove", handleDragMove, { passive: false });
+        document.addEventListener("mousemove", handleDragMove, { passive: false });
+        document.addEventListener("touchmove", handleDragMove, { passive: false });
+        document.addEventListener("pointerup", endActiveDrag);
+        document.addEventListener("mouseup", endActiveDrag);
+        document.addEventListener("touchend", endActiveDrag);
+        document.addEventListener("pointercancel", endActiveDrag);
+        document.addEventListener("touchcancel", endActiveDrag);
+        document.addEventListener("mouseleave", endActiveDrag);
+      }
+
+      function bindModeButtons() {
+        document.querySelectorAll(".mode-button").forEach((button) => {
+          const activate = (event) => {
+            if (event && event.preventDefault) event.preventDefault();
+            applyPreset(button.dataset.mode, true);
+          };
+
+          button.addEventListener("click", activate);
+          button.addEventListener("touchend", activate);
+        });
+      }
+
+      function connectParameters() {
+        if (!juceAvailable) return;
+
+        allParamIds.forEach((id) => {
+          parameterStates[id] = createSliderState(id);
+        });
+
+        knobParamIds.forEach((id) => {
+          const state = parameterStates[id];
+          if (!state || !state.valueChangedEvent) return;
+
+          state.valueChangedEvent.addListener(() => {
+            if (isApplyingPreset) return;
+            setKnobVisual(id, getActualValue(id, state.getNormalisedValue()));
+          });
+        });
+
+        selectorParamIds.forEach((id) => {
+          const state = parameterStates[id];
+          if (!state || !state.valueChangedEvent) return;
+
+          state.valueChangedEvent.addListener(() => {
+            if (isApplyingPreset) return;
+            setSelectorVisual(id, getActualValue(id, state.getNormalisedValue()));
+          });
+        });
+
+        const modeState = parameterStates.mode_preset;
+        if (modeState && modeState.valueChangedEvent) {
+          modeState.valueChangedEvent.addListener(() => {
+            if (isApplyingPreset) return;
+            const modeName = getActualValue("mode_preset", modeState.getNormalisedValue());
+            applyPreset(modeName, false);
+          });
+        }
+
+        window.setTimeout(() => {
+          knobParamIds.forEach((id) => {
+            const state = parameterStates[id];
+            if (state) {
+              setKnobVisual(id, getActualValue(id, state.getNormalisedValue()));
+            }
+          });
+
+          selectorParamIds.forEach((id) => {
+            const state = parameterStates[id];
+            if (state) {
+              setSelectorVisual(id, getActualValue(id, state.getNormalisedValue()));
+            }
+          });
+
+          if (modeState) {
+            const modeName = getActualValue("mode_preset", modeState.getNormalisedValue());
+            if (modeName && presets[modeName]) {
+              applyPreset(modeName, false);
+              return;
+            }
+          }
+
+          applyPreset("Neutral", false);
+        }, 60);
+      }
+
+      window.updateOutputMeter = function (level, isHot) {
+        const bars = document.querySelectorAll("#output-meter .meter-bar");
+        const activeCount = Math.round(clamp(level, 0, 1) * bars.length);
+
+        bars.forEach((bar, index) => {
+          bar.classList.toggle("active", index < activeCount);
+          bar.classList.toggle("hot", Boolean(isHot) && index < activeCount);
+        });
+      };
+
+      function bootUi() {
+        juceAvailable = !!(window.__JUCE__ && window.__JUCE__.backend && typeof window.__JUCE__.backend.emitEvent === "function");
+
+        bindSelectorButtons();
+        bindKnobs();
+        bindModeButtons();
+
+        if (juceAvailable) {
+          try {
+            connectParameters();
+          } catch (error) {
+            juceAvailable = false;
+            console.warn("Parameter sync unavailable, keeping local UI active:", error && error.message ? error.message : error);
+            applyPreset("Neutral", false);
+          }
+        } else {
+          applyPreset("Neutral", false);
+        }
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", bootUi, { once: true });
+      } else {
+        bootUi();
+      }
+    }());
   </script>
 </body>
 </html>
