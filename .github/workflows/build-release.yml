@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'space-by-nova-macos-v*'
+      - 'nova-tone-macos-v*'
   workflow_dispatch:
     inputs:
       plugin:
@@ -59,7 +60,11 @@ jobs:
         id: set-matrix
         run: |
           if [ "${{ github.event_name }}" == "push" ]; then
-            echo 'matrix={"plugin":["Space By Nova"]}' >> $GITHUB_OUTPUT
+            if [[ "${GITHUB_REF_NAME}" == nova-tone-macos-v* ]]; then
+              echo 'matrix={"plugin":["Nova Tone"]}' >> $GITHUB_OUTPUT
+            else
+              echo 'matrix={"plugin":["Space By Nova"]}' >> $GITHUB_OUTPUT
+            fi
           elif [ "${{ inputs.plugin }}" == "all" ]; then
             echo 'matrix={"plugin":["CloudWash","gnarly2","nf_gnarly","Space By Nova","Nova Tone"]}' >> $GITHUB_OUTPUT
           else
