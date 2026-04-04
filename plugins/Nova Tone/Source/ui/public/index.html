@@ -87,12 +87,16 @@
     }
 
     .descriptor {
-      margin-top: 10px;
-      font-size: 14px;
-      letter-spacing: 0.20em;
-      color: #5d5042;
+      margin-top: 2px;
+      font-family: "Snell Roundhand", "Apple Chancery", "URW Chancery L", "Brush Script MT", cursive;
+      font-size: 28px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      color: #8f7654;
       text-align: right;
-      text-shadow: 0 1px 0 rgba(255,255,255,0.38);
+      text-shadow:
+        0 1px 0 rgba(255,255,255,0.42),
+        0 2px 3px rgba(126, 98, 62, 0.12);
     }
 
     .inner-panel {
@@ -284,6 +288,18 @@
       letter-spacing: 0.08em;
       color: #2f241c;
       text-align: center;
+      cursor: text;
+      user-select: text;
+      -webkit-user-select: text;
+      outline: none;
+    }
+
+    .readout:focus {
+      border-color: rgba(191, 133, 34, 0.85);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.86),
+        0 0 0 2px rgba(221, 180, 92, 0.28),
+        0 4px 10px rgba(110,84,48,0.08);
     }
 
     .output-card {
@@ -399,7 +415,7 @@
         <h1 class="title">NOVA TONE</h1>
         <div class="subtitle">MUSICAL TONE EQUALIZER</div>
       </div>
-      <div class="descriptor">ANALOG CURVES / PREMIUM TONE</div>
+      <div class="descriptor">by international nova</div>
     </div>
 
     <div class="inner-panel">
@@ -416,12 +432,12 @@
             <div class="knob-wrap">
               <div class="knob-label">LOW BOOST</div>
               <div class="knob" data-param="low_boost" data-min="0" data-max="10"><div class="arc"></div></div>
-              <div class="readout" id="lowBoost-value">0.0</div>
+              <div class="readout" id="lowBoost-value" data-param="low_boost" contenteditable="true" spellcheck="false" tabindex="0">0.0</div>
             </div>
             <div class="knob-wrap">
               <div class="knob-label">LOW ATTEN</div>
               <div class="knob" data-param="low_attenuation" data-min="0" data-max="10"><div class="arc"></div></div>
-              <div class="readout" id="lowAttenuation-value">0.0</div>
+              <div class="readout" id="lowAttenuation-value" data-param="low_attenuation" contenteditable="true" spellcheck="false" tabindex="0">0.0</div>
             </div>
           </div>
         </section>
@@ -441,12 +457,12 @@
             <div class="knob-wrap">
               <div class="knob-label">HIGH BOOST</div>
               <div class="knob" data-param="high_boost" data-min="0" data-max="10"><div class="arc"></div></div>
-              <div class="readout" id="highBoost-value">0.0</div>
+              <div class="readout" id="highBoost-value" data-param="high_boost" contenteditable="true" spellcheck="false" tabindex="0">0.0</div>
             </div>
             <div class="knob-wrap">
               <div class="knob-label">BANDWIDTH</div>
               <div class="knob" data-param="bandwidth" data-min="1" data-max="10"><div class="arc"></div></div>
-              <div class="readout" id="bandwidth-value">BW 5.0</div>
+              <div class="readout" id="bandwidth-value" data-param="bandwidth" contenteditable="true" spellcheck="false" tabindex="0">BW 5.0</div>
             </div>
           </div>
         </section>
@@ -462,7 +478,7 @@
             <div class="knob-wrap">
               <div class="knob-label">HIGH ATTEN</div>
               <div class="knob" data-param="high_attenuation" data-min="0" data-max="10"><div class="arc"></div></div>
-              <div class="readout" id="highAttenuation-value">0.0</div>
+              <div class="readout" id="highAttenuation-value" data-param="high_attenuation" contenteditable="true" spellcheck="false" tabindex="0">0.0</div>
             </div>
           </div>
         </section>
@@ -474,7 +490,7 @@
               <div class="knob-wrap">
                 <div class="knob-label">OUTPUT GAIN</div>
                 <div class="knob" data-param="output_gain" data-min="-10" data-max="10"><div class="arc"></div></div>
-                <div class="readout" id="outputGain-value">+0.0 dB</div>
+                <div class="readout" id="outputGain-value" data-param="output_gain" contenteditable="true" spellcheck="false" tabindex="0">+0.0 dB</div>
               </div>
               <div class="output-meter" aria-label="Output meter">
                 <div class="mini-meter" id="output-meter" aria-hidden="true">
@@ -661,6 +677,40 @@
         return Number(value).toFixed(1);
       }
 
+      function getParamRange(paramId) {
+        switch (paramId) {
+          case "bandwidth":
+            return { min: 1, max: 10 };
+          case "output_gain":
+            return { min: -10, max: 10 };
+          default:
+            return { min: 0, max: 10 };
+        }
+      }
+
+      function parseInputValue(paramId, rawValue) {
+        const cleaned = String(rawValue || "").replace(/[^0-9+\-.]/g, "");
+        const parsed = Number(cleaned);
+        const { min, max } = getParamRange(paramId);
+
+        if (!Number.isFinite(parsed)) {
+          return currentValues[paramId];
+        }
+
+        return clamp(parsed, min, max);
+      }
+
+      function moveCaretToEnd(element) {
+        if (!window.getSelection || !document.createRange || !element) return;
+
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+
       function createListenerList() {
         return {
           listeners: [],
@@ -758,7 +808,7 @@
         }
 
         const readout = document.getElementById(knobIds[paramId]);
-        if (readout) {
+        if (readout && document.activeElement !== readout) {
           readout.textContent = formatValue(paramId, numericValue);
         }
       }
@@ -960,6 +1010,44 @@
         document.addEventListener("mouseleave", endActiveDrag);
       }
 
+      function bindReadouts() {
+        document.querySelectorAll(".readout[data-param]").forEach((readout) => {
+          const { param } = readout.dataset;
+
+          readout.addEventListener("focus", () => {
+            readout.textContent = Number(currentValues[param]).toFixed(1);
+            moveCaretToEnd(readout);
+          });
+
+          readout.addEventListener("input", () => {
+            const cleaned = readout.textContent.replace(/[^0-9+\-.]/g, "");
+            if (readout.textContent !== cleaned) {
+              readout.textContent = cleaned;
+              moveCaretToEnd(readout);
+            }
+          });
+
+          readout.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              readout.blur();
+            }
+
+            if (event.key === "Escape") {
+              event.preventDefault();
+              readout.textContent = formatValue(param, currentValues[param]);
+              readout.blur();
+            }
+          });
+
+          readout.addEventListener("blur", () => {
+            const nextValue = parseInputValue(param, readout.textContent);
+            setKnobVisual(param, nextValue);
+            pushParameter(param, nextValue);
+          });
+        });
+      }
+
       function bindModeButtons() {
         document.querySelectorAll(".mode-button").forEach((button) => {
           const activate = (event) => {
@@ -1050,6 +1138,7 @@
 
         bindSelectorButtons();
         bindKnobs();
+        bindReadouts();
         bindModeButtons();
 
         if (juceAvailable) {
