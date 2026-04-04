@@ -293,3 +293,69 @@ issues:
     attempts_before_resolution: 1
     prevention: "ALWAYS use git submodule add, NEVER commit framework directories as regular files"
     critical_fix: "git rm -r --cached _tools/JUCE && rm -rf _tools/JUCE && git submodule add https://github.com/juce-framework/JUCE _tools/JUCE"
+- id: cmake-018
+  title: "[Auto] CMake Error: Could not create named generator Xcode"
+  category: cmake
+  severity: high
+  symptoms:
+    - "CMake Error: Could not create named generator Xcode"
+  error_patterns:
+    - "CMake Error"
+  resolution_status: investigating
+  resolution_file: resolutions/cmake-018.md
+  frequency: 1
+  last_occurred: 2026-04-04
+  attempts_before_resolution: 1
+
+- id: build-019
+  title: "[Auto] /workspaces/audio-plugin-coder/plugins/Space By Nova/Source/PluginProcessor.cpp:404:48: error: no ma"
+  category: build
+  severity: high
+  symptoms:
+    - "/workspaces/audio-plugin-coder/plugins/Space By Nova/Source/PluginProcessor.cpp:404:48: error: no matching function for call to ‘jlimit(float, float, double)’"
+    - "/workspaces/audio-plugin-coder/plugins/Space By Nova/Source/PluginProcessor.cpp:410:45: error: no matching function for call to ‘jlimit(float, float, double)’"
+    - "/workspaces/audio-plugin-coder/plugins/Space By Nova/Source/PluginProcessor.cpp:479:81: error: no matching function for call to ‘juce::dsp::StateVariableTPTFilter<float>::processSample(float)’"
+    - "/workspaces/audio-plugin-coder/plugins/Space By Nova/Source/PluginProcessor.cpp:481:70: error: no matching function for call to ‘juce::dsp::StateVariableTPTFilter<float>::processSample(float)’"
+  error_patterns:
+    - "error:.*"
+    - "error:.*"
+    - "error:.*"
+  resolution_status: investigating
+  resolution_file: resolutions/build-019.md
+  frequency: 1
+  last_occurred: 2026-04-04
+  attempts_before_resolution: 1
+
+- id: build-020
+  title: "[Auto] /workspaces/audio-plugin-coder/plugins/Space By Nova/Source/PluginEditor.cpp:75:33: error: ‘class "
+  category: build
+  severity: high
+  symptoms:
+    - "/workspaces/audio-plugin-coder/plugins/Space By Nova/Source/PluginEditor.cpp:75:33: error: ‘class juce::URL’ has no member named ‘getPath’; did you mean ‘getSubPath’?"
+    - "/workspaces/audio-plugin-coder/plugins/Space By Nova/Source/PluginEditor.cpp:85:56: error: ‘js_index_js’ is not a member of ‘space_by_nova_BinaryData’; did you mean ‘index_js’?"
+    - "/workspaces/audio-plugin-coder/plugins/Space By Nova/Source/PluginEditor.cpp:86:56: error: ‘js_index_jsSize’ is not a member of ‘space_by_nova_BinaryData’; did you mean ‘index_jsSize’?"
+    - "/workspaces/audio-plugin-coder/plugins/Space By Nova/Source/PluginEditor.cpp:90:56: error: ‘js_juce_index_js’ is not a member of ‘space_by_nova_BinaryData’"
+    - "/workspaces/audio-plugin-coder/plugins/Space By Nova/Source/PluginEditor.cpp:91:56: error: ‘js_juce_index_jsSize’ is not a member of ‘space_by_nova_BinaryData’"
+  error_patterns:
+    - "error:.*"
+    - "error:.*"
+    - "error:.*"
+  resolution_status: investigating
+  resolution_file: resolutions/build-020.md
+  frequency: 1
+  last_occurred: 2026-04-04
+  attempts_before_resolution: 1
+
+- id: build-021
+  title: "[Auto] /workspaces/audio-plugin-coder/_tools/JUCE/modules/juce_audio_devices/juce_audio_devices.cpp:232:11:"
+  category: build
+  severity: high
+  symptoms:
+    - "/workspaces/audio-plugin-coder/_tools/JUCE/modules/juce_audio_devices/juce_audio_devices.cpp:232:11: fatal error: jack/jack.h: No such file or directory"
+  error_patterns:
+    - "error:.*"
+  resolution_status: investigating
+  resolution_file: resolutions/build-021.md
+  frequency: 1
+  last_occurred: 2026-04-04
+  attempts_before_resolution: 1
