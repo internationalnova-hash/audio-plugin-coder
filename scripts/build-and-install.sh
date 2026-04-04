@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# APC Master Builder (macOS)
-# Configures, builds, and installs audio plugins using Xcode generator.
+# APC Master Builder (macOS/Linux)
+# Configures, builds, and installs audio plugins using the correct generator per platform.
 #
 # Usage: bash scripts/build-and-install.sh <PluginName> [--no-install] [--skip-tests]
 
@@ -31,6 +31,7 @@ ROOT_PATH="$(cd "$SCRIPT_DIR/.." && pwd)"
 BUILD_DIR="$ROOT_PATH/build"
 PLUGIN_DIR="$ROOT_PATH/plugins/$PLUGIN_NAME"
 STATUS_JSON="$PLUGIN_DIR/status.json"
+PLUGIN_TARGET="$(echo "$PLUGIN_NAME" | tr -cd '[:alnum:]_')"
 
 # --- IMPORT MODULES ---
 # shellcheck source=state-management.sh
@@ -62,18 +63,49 @@ fi
 
 # --- 1. CONFIGURE ---
 echo "Configuring build..."
-VISAGE_FLAG=""
+VISAGE_FLAG=()
 if $USE_VISAGE; then
-    VISAGE_FLAG="-DAPC_ENABLE_VISAGE:BOOL=ON"
+    VISAGE_FLAG=(-DAPC_ENABLE_VISAGE:BOOL=ON)
 fi
+
+CMAKE_GENERATOR=""
+PLATFORM_CONFIG_ARGS=()
+BUILD_CONFIG_ARGS=()
+BUILD_WRAPPER=()
+
+case "$(uname -s)" in
+    Darwin)
+        CMAKE_GENERATOR="Xcode"
+        PLATFORM_CONFIG_ARGS=(
+            -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
+        )
+        BUILD_CONFIG_ARGS=(--config Release)
+        ;;
+    Linux)
+        if command -v ninja &>/dev/null; then
+            CMAKE_GENERATOR="Ninja"
+        else
+            CMAKE_GENERATOR="Unix Makefiles"
+        fi
+        PLATFORM_CONFIG_ARGS=(-DCMAKE_BUILD_TYPE=Release)
+
+        if [[ -z "${DISPLAY:-}" ]] && command -v xvfb-run &>/dev/null; then
+            BUILD_WRAPPER=(xvfb-run -a)
+        fi
+        ;;
+    *)
+        echo "ERROR: Unsupported Unix platform: $(uname -s)" >&2
+        exit 1
+        ;;
+esac
 
 CONFIG_OUTPUT=""
 CONFIG_OUTPUT=$(cmake -S "$ROOT_PATH" -B "$BUILD_DIR" \
-    -G Xcode \
-    -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
-    -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 \
+    -G "$CMAKE_GENERATOR" \
     --fresh \
-    $VISAGE_FLAG 2>&1) || {
+    "${PLATFORM_CONFIG_ARGS[@]}" \
+    "${VISAGE_FLAG[@]}" 2>&1) || {
     echo "ERROR: CMake configuration failed" >&2
     echo "$CONFIG_OUTPUT" >&2
 
@@ -95,7 +127,7 @@ CONFIG_OUTPUT=$(cmake -S "$ROOT_PATH" -B "$BUILD_DIR" \
 # --- 2. BUILD VST3 ---
 echo "Compiling VST3..."
 VST3_OUTPUT=""
-VST3_OUTPUT=$(cmake --build "$BUILD_DIR" --config Release --target "${PLUGIN_NAME}_VST3" 2>&1) || {
+VST3_OUTPUT=$(cmake --build "$BUILD_DIR" "${BUILD_CONFIG_ARGS[@]}" --target "${PLUGIN_TARGET}_VST3" 2>&1) || {
     echo "ERROR: VST3 build failed" >&2
     echo "$VST3_OUTPUT" >&2
 
@@ -117,15 +149,19 @@ VST3_OUTPUT=$(cmake --build "$BUILD_DIR" --config Release --target "${PLUGIN_NAM
 # --- 3. BUILD AU (AudioUnit) ---
 echo "Compiling AudioUnit..."
 AU_OUTPUT=""
-AU_OUTPUT=$(cmake --build "$BUILD_DIR" --config Release --target "${PLUGIN_NAME}_AU" 2>&1) || {
-    echo "WARNING: AudioUnit build failed (non-fatal)" >&2
-    echo "$AU_OUTPUT" >&2
-}
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    AU_OUTPUT=$(cmake --build "$BUILD_DIR" "${BUILD_CONFIG_ARGS[@]}" --target "${PLUGIN_TARGET}_AU" 2>&1) || {
+        echo "WARNING: AudioUnit build failed (non-fatal)" >&2
+        echo "$AU_OUTPUT" >&2
+    }
+fi
 
 # --- 4. BUILD STANDALONE ---
 echo "Compiling Standalone..."
 STANDALONE_OUTPUT=""
-STANDALONE_OUTPUT=$(cmake --build "$BUILD_DIR" --config Release --target "${PLUGIN_NAME}_Standalone" 2>&1) || {
+STANDALONE_OUTPUT=$(
+    "${BUILD_WRAPPER[@]}" cmake --build "$BUILD_DIR" "${BUILD_CONFIG_ARGS[@]}" --target "${PLUGIN_TARGET}_Standalone" 2>&1
+) || {
     echo "WARNING: Standalone build failed (non-fatal)" >&2
     echo "$STANDALONE_OUTPUT" >&2
 }
