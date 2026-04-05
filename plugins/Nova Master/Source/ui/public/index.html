@@ -496,6 +496,37 @@
       color: #7b8792;
     }
 
+    .trim-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      padding: 4px 0 2px;
+    }
+
+    .trim-knob {
+      width: 78px;
+      height: 78px;
+    }
+
+    .trim-knob::after {
+      top: 8px;
+      height: 20px;
+      width: 3px;
+    }
+
+    .trim-knob .ring {
+      inset: 5px;
+    }
+
+    .trim-readout {
+      min-width: 74px;
+      padding: 6px 8px;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+    }
+
     .finish-button {
       position: relative;
       overflow: hidden;
@@ -663,6 +694,11 @@
             <span class="meter-bar"></span>
             <span class="meter-bar"></span>
           </div>
+          <div class="mini-label">TRIM</div>
+          <div class="trim-stack">
+            <div class="knob trim-knob" data-param="output_gain" data-min="-6" data-max="6"><div class="ring"></div></div>
+            <div class="readout trim-readout" data-readout="output_gain">+0.0 dB</div>
+          </div>
           <div class="readout" id="output-readout">+0.0 dB</div>
           <div class="rail-note">ceiling aware</div>
           <button id="finish-toggle" class="finish-button" type="button">FINISH</button>
@@ -687,6 +723,7 @@
       weight: 4.0,
       air: 5.0,
       width: 4.5,
+      output_gain: 0.0,
       output: 0.0,
       finish: false,
       meter: 'OUT',
@@ -800,7 +837,9 @@
 
       const readout = document.querySelector(`[data-readout="${param}"]`);
       if (readout) {
-        readout.textContent = safe.toFixed(1);
+        readout.textContent = param === 'output_gain'
+          ? `${safe >= 0 ? '+' : ''}${safe.toFixed(1)} dB`
+          : safe.toFixed(1);
         readout.classList.add('live');
         clearTimeout(readout._liveTimer);
         readout._liveTimer = setTimeout(() => readout.classList.remove('live'), 160);
@@ -861,10 +900,11 @@
 
       const polish = (values.air + values.width) * 0.04;
       const density = values.glue * 0.06 + values.weight * 0.03;
-      const finishBoost = values.finish ? 0.08 : 0.0;
+      const finishBoost = values.finish ? 0.16 : 0.0;
+      const trimBoost = (values.output_gain || 0.0) * 0.02;
       const raw = values.meter === 'LU'
-        ? 0.34 + density + finishBoost
-        : 0.28 + polish + density + finishBoost;
+        ? 0.34 + density + finishBoost + trimBoost
+        : 0.28 + polish + density + finishBoost + trimBoost;
       return clamp(raw, 0, 1);
     }
 
@@ -885,7 +925,7 @@
       const outputReadout = document.getElementById('output-readout');
       if (juceAvailable) {
         if (values.meter === 'LU') {
-          const luValue = -14.0 + (meterState.loudness * 8.0);
+          const luValue = -18.0 + (meterState.loudness * 12.0);
           outputReadout.textContent = `${luValue.toFixed(1)} LU`;
         } else {
           const dbValue = meterState.output > 0.0001 ? 20 * Math.log10(meterState.output) : -60.0;
@@ -894,7 +934,7 @@
         outputReadout.style.color = meterState.hot ? '#8a6228' : '#37414c';
       } else {
         const modeTrim = values.mode === 'LOUD' ? 0.18 : values.mode === 'WIDE' ? 0.05 : values.mode === 'WARM' ? 0.10 : 0.0;
-        values.output = ((values.glue - 3.5) * 0.12) + (values.finish ? 0.18 : 0.0) + modeTrim;
+        values.output = ((values.glue - 3.5) * 0.12) + (values.finish ? 0.45 : 0.0) + modeTrim + (values.output_gain || 0.0);
         const suffix = values.meter === 'LU' ? ' LU' : ' dB';
         outputReadout.textContent = `${values.output >= 0 ? '+' : ''}${values.output.toFixed(1)}${suffix}`;
       }
@@ -910,7 +950,7 @@
         parameterStates[id] = createParameterState(id);
       });
 
-      ['tone', 'glue', 'weight', 'air', 'width'].forEach((param) => {
+      ['tone', 'glue', 'weight', 'air', 'width', 'output_gain'].forEach((param) => {
         const state = parameterStates[param];
         if (!state || !state.valueChangedEvent) return;
         state.valueChangedEvent.addListener(() => {
@@ -937,7 +977,7 @@
       }
 
       window.setTimeout(() => {
-        ['tone', 'glue', 'weight', 'air', 'width'].forEach((param) => {
+        ['tone', 'glue', 'weight', 'air', 'width', 'output_gain'].forEach((param) => {
           const state = parameterStates[param];
           if (state) {
             updateKnob(param, fromNormalisedValue(param, state.currentValue), true);
@@ -1105,7 +1145,7 @@
     if (!juceAvailable) {
       applyPreset('CLEAN');
     } else {
-      ['tone', 'glue', 'weight', 'air', 'width'].forEach((param) => updateKnob(param, values[param], true));
+      ['tone', 'glue', 'weight', 'air', 'width', 'output_gain'].forEach((param) => updateKnob(param, values[param], true));
       setMode(values.mode, true);
       setFinish(values.finish, true);
     }
