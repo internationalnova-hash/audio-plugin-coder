@@ -853,8 +853,7 @@
 
       knob.addEventListener('pointermove', (event) => {
         if (!dragging) return;
-        const deltaX = event.clientX - event.pressure * 0;
-        move(event.clientY - deltaX);
+        move(event.clientY);
       });
       knob.addEventListener('pointerup', () => {
         dragging = false;

@@ -327,24 +327,23 @@ void NovaMasterAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     const auto releaseCoeff = std::exp (-1.0f / (0.001f * releaseMs * static_cast<float> (currentSampleRate)));
 
     const auto harmonicDrive = 1.0f + (glueNorm * 0.03f) + (mode.warmthBias * 0.04f)
-                             + (finishOn ? (0.05f + (0.02f * mode.limiterBias)) : 0.0f);
-    const auto harmonicBlend = juce::jlimit (0.08f, 0.26f,
-                                             0.08f + (glueNorm * 0.05f) + (finishOn ? 0.05f : 0.0f));
+                             + (finishOn ? 0.05f : 0.0f);
+    const auto harmonicBlend = juce::jlimit (0.08f, 0.22f,
+                                             0.08f + (glueNorm * 0.05f) + (finishOn ? 0.04f : 0.0f));
     const auto sideBoost = 1.0f + (widthNorm * (0.30f + mode.widthBias)) + (finishOn ? 0.05f : 0.0f);
 
     const auto limiterThresholdDb = finishOn
-        ? (-4.6f - (glueNorm * 1.35f) - (mode.limiterBias * 0.85f))
+        ? (-3.2f - (glueNorm * 0.9f) - (mode.limiterBias * 0.4f))
         : 0.5f;
     const auto limiterThresholdLinear = juce::Decibels::decibelsToGain (limiterThresholdDb);
-    const auto ceilingDb = finishOn ? mode.ceilingDb : -0.5f;
+    const auto ceilingDb = finishOn ? -0.8f : -0.5f;
     const auto ceilingLinear = juce::Decibels::decibelsToGain (ceilingDb);
-    const auto finishDrive = finishOn ? (1.05f + (glueNorm * 0.05f) + (0.02f * mode.limiterBias)) : 1.0f;
+    const auto finishDrive = finishOn ? (1.03f + (glueNorm * 0.03f)) : 1.0f;
     const auto preLimiterGain = juce::Decibels::decibelsToGain (finishOn ? 3.0f : 0.0f);
-    const auto finishMakeupDb = finishOn ? (0.9f + (glueNorm * 0.35f) + (0.35f * mode.limiterBias)) : 0.0f;
-    const auto limiterRatio = 3.0f + (1.0f * mode.limiterBias);
-    const auto limiterKneeDb = finishOn ? 3.5f : 0.0f;
-    const auto limiterAttackRate = finishOn ? (0.18f + (0.03f * mode.limiterBias)) : 0.32f;
-    const auto limiterReleaseRate = finishOn ? 0.0085f : 0.006f;
+    const auto limiterRatio = 2.6f + (0.5f * mode.limiterBias);
+    const auto limiterKneeDb = finishOn ? 3.0f : 0.0f;
+    const auto limiterAttackRate = finishOn ? 0.16f : 0.32f;
+    const auto limiterReleaseRate = finishOn ? 0.010f : 0.006f;
 
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
@@ -417,15 +416,6 @@ void NovaMasterAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         left *= limiterGain;
         right *= limiterGain;
 
-        if (finishOn)
-        {
-            const auto adaptiveMakeupDb = juce::jlimit (0.0f, 2.2f,
-                                                        finishMakeupDb + (limiterGainReductionDb * 0.18f));
-            const auto adaptiveMakeupGain = juce::Decibels::decibelsToGain (adaptiveMakeupDb);
-            left *= adaptiveMakeupGain;
-            right *= adaptiveMakeupGain;
-        }
-
         left = applySoftCeiling (left, ceilingLinear);
         right = applySoftCeiling (right, ceilingLinear);
 
@@ -434,7 +424,7 @@ void NovaMasterAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             buffer.setSample (1, sample, right);
     }
 
-    outputTrim.setGainDecibels (outputGainDb + (finishOn ? 0.20f : 0.0f));
+    outputTrim.setGainDecibels (outputGainDb);
     outputTrim.process (wetContext);
 
     float peakAccumulator = 0.0f;

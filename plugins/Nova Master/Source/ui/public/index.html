@@ -804,17 +804,41 @@
       }
     }
 
-    function createParameterState(identifier) {
+    function createSliderState(name) {
       if (!juceAvailable || !window.__JUCE__ || !window.__JUCE__.backend) return null;
+
       const backend = window.__JUCE__.backend;
       const state = {
-        identifier,
-        currentValue: 0,
+        name,
+        identifier: '__juce__slider' + name,
+        scaledValue: 0,
+        properties: {
+          start: 0,
+          end: 1,
+          skew: 1,
+          interval: 0,
+          numSteps: 100
+        },
         valueChangedEvent: createListenerList(),
+        getNormalisedValue() {
+          const start = typeof this.properties.start === 'number' ? this.properties.start : 0;
+          const end = typeof this.properties.end === 'number' ? this.properties.end : 1;
+          const range = end - start;
+          if (range === 0) return 0;
+          return clamp((this.scaledValue - start) / range, 0, 1);
+        },
         setNormalisedValue(newValue) {
-          const safe = clamp(newValue, 0, 1);
-          this.currentValue = safe;
-          backend.emitEvent(this.identifier, { eventType: 'valueChanged', value: safe });
+          const normalised = clamp(newValue, 0, 1);
+          const start = typeof this.properties.start === 'number' ? this.properties.start : 0;
+          const end = typeof this.properties.end === 'number' ? this.properties.end : 1;
+          const interval = typeof this.properties.interval === 'number' ? this.properties.interval : 0;
+          let scaled = start + (normalised * (end - start));
+
+          if (interval > 0)
+            scaled = Math.round(scaled / interval) * interval;
+
+          this.scaledValue = scaled;
+          backend.emitEvent(this.identifier, { eventType: 'valueChanged', value: scaled });
         },
         sliderDragStarted() {
           backend.emitEvent(this.identifier, { eventType: 'sliderDragStarted' });
@@ -824,14 +848,26 @@
         }
       };
 
-      backend.addEventListener(identifier, (event) => {
-        if (event && event.eventType === 'valueChanged') {
-          state.currentValue = Number(event.value) || 0;
+      backend.addEventListener(state.identifier, (event) => {
+        if (!event) return;
+
+        if (event.eventType === 'valueChanged') {
+          if (typeof event.value === 'number')
+            state.scaledValue = event.value;
+
           state.valueChangedEvent.callListeners(event);
+        }
+
+        if (event.eventType === 'propertiesChanged') {
+          const nextProps = {};
+          Object.keys(event).forEach((key) => {
+            if (key !== 'eventType') nextProps[key] = event[key];
+          });
+          state.properties = nextProps;
         }
       });
 
-      backend.emitEvent(identifier, { eventType: 'requestInitialUpdate' });
+      backend.emitEvent(state.identifier, { eventType: 'requestInitialUpdate' });
       return state;
     }
 
@@ -958,32 +994,32 @@
       if (!juceAvailable) return;
 
       ['tone', 'glue', 'weight', 'air', 'width', 'output_gain', 'finish_mode', 'mode_preset', 'meter_view'].forEach((id) => {
-        parameterStates[id] = createParameterState(id);
+        parameterStates[id] = createSliderState(id);
       });
 
       ['tone', 'glue', 'weight', 'air', 'width', 'output_gain'].forEach((param) => {
         const state = parameterStates[param];
         if (!state || !state.valueChangedEvent) return;
         state.valueChangedEvent.addListener(() => {
-          updateKnob(param, fromNormalisedValue(param, state.currentValue), true);
+          updateKnob(param, fromNormalisedValue(param, state.getNormalisedValue()), true);
         });
       });
 
       if (parameterStates.mode_preset && parameterStates.mode_preset.valueChangedEvent) {
         parameterStates.mode_preset.valueChangedEvent.addListener(() => {
-          setMode(fromNormalisedValue('mode_preset', parameterStates.mode_preset.currentValue), true);
+          setMode(fromNormalisedValue('mode_preset', parameterStates.mode_preset.getNormalisedValue()), true);
         });
       }
 
       if (parameterStates.finish_mode && parameterStates.finish_mode.valueChangedEvent) {
         parameterStates.finish_mode.valueChangedEvent.addListener(() => {
-          setFinish(fromNormalisedValue('finish_mode', parameterStates.finish_mode.currentValue), true);
+          setFinish(fromNormalisedValue('finish_mode', parameterStates.finish_mode.getNormalisedValue()), true);
         });
       }
 
       if (parameterStates.meter_view && parameterStates.meter_view.valueChangedEvent) {
         parameterStates.meter_view.valueChangedEvent.addListener(() => {
-          setMeterView(fromNormalisedValue('meter_view', parameterStates.meter_view.currentValue), true);
+          setMeterView(fromNormalisedValue('meter_view', parameterStates.meter_view.getNormalisedValue()), true);
         });
       }
 
@@ -991,20 +1027,20 @@
         ['tone', 'glue', 'weight', 'air', 'width', 'output_gain'].forEach((param) => {
           const state = parameterStates[param];
           if (state) {
-            updateKnob(param, fromNormalisedValue(param, state.currentValue), true);
+            updateKnob(param, fromNormalisedValue(param, state.getNormalisedValue()), true);
           }
         });
 
         if (parameterStates.mode_preset) {
-          setMode(fromNormalisedValue('mode_preset', parameterStates.mode_preset.currentValue), true);
+          setMode(fromNormalisedValue('mode_preset', parameterStates.mode_preset.getNormalisedValue()), true);
         }
 
         if (parameterStates.finish_mode) {
-          setFinish(fromNormalisedValue('finish_mode', parameterStates.finish_mode.currentValue), true);
+          setFinish(fromNormalisedValue('finish_mode', parameterStates.finish_mode.getNormalisedValue()), true);
         }
 
         if (parameterStates.meter_view) {
-          setMeterView(fromNormalisedValue('meter_view', parameterStates.meter_view.currentValue), true);
+          setMeterView(fromNormalisedValue('meter_view', parameterStates.meter_view.getNormalisedValue()), true);
         }
       }, 60);
     }
