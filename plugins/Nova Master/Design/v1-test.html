@@ -536,12 +536,75 @@
       letter-spacing: 0.04em;
     }
 
+    .mix-module {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0;
+      width: 112px;
+      align-self: center;
+      flex-shrink: 0;
+      margin-top: auto;
+      transform: translateY(16px);
+      padding: 0 0 4px;
+      min-height: 78px;
+    }
+
+    .mix-head {
+      position: absolute;
+      left: -14px;
+      right: -14px;
+      top: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0;
+      transform: translateY(-4px);
+      pointer-events: none;
+    }
+
+    .mix-head .mini-label {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+    }
+
+    .mix-knob {
+      width: 58px;
+      height: 58px;
+      margin-top: 8px;
+    }
+
+    .mix-knob::after {
+      top: 8px;
+      height: 18px;
+      width: 3px;
+    }
+
+    .mix-knob .ring {
+      inset: 5px;
+    }
+
+    .mix-readout {
+      min-width: 0;
+      padding: 3px 7px;
+      margin-left: 28px;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+    }
+
     .finish-button {
       position: relative;
+      z-index: 3;
+      flex-shrink: 0;
       overflow: hidden;
-      margin-top: auto;
+      margin-top: 8px;
       width: 100%;
       min-width: 0;
+      min-height: 44px;
       height: 44px;
       padding: 0 20px;
       font-size: 12px;
@@ -636,14 +699,12 @@
       <div class="title-block">
         <div class="title-meta">
           <span class="header-chip">MASTER BUS FINISHER</span>
-          <span class="header-chip gold">FLAGSHIP</span>
         </div>
         <h1 class="title">NOVA MASTER</h1>
         <div class="subtitle">FINAL MIX PROCESSOR</div>
       </div>
       <div class="tagline-wrap">
         <div class="tagline">by International Nova</div>
-        <div class="tagline-sub">refinement over hype</div>
       </div>
     </div>
 
@@ -686,7 +747,6 @@
 
         <div class="precision-rail">
           <div class="rail-badge">OUTPUT STAGE</div>
-          <div class="mini-label">FINAL LEVEL</div>
           <div class="meter-toggle">
             <button data-meter="OUT" class="active">OUT</button>
             <button data-meter="LU">LU</button>
@@ -713,6 +773,13 @@
           <div class="readout" id="output-readout">+0.0 dB</div>
           <div class="rail-note">ceiling aware</div>
           <button id="finish-toggle" class="finish-button" type="button">FINISH</button>
+          <div class="mix-module">
+            <div class="mix-head">
+              <div class="mini-label">MIX</div>
+              <div class="readout mix-readout" data-readout="mix">100%</div>
+            </div>
+            <div class="knob mix-knob" data-param="mix" data-min="0" data-max="100"><div class="ring"></div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -734,6 +801,7 @@
       weight: 4.0,
       air: 5.0,
       width: 4.5,
+      mix: 100.0,
       output_gain: 0.0,
       output: 0.0,
       finish: false,
@@ -742,10 +810,10 @@
     };
 
     const presets = {
-      CLEAN: { tone: 5.0, glue: 3.5, weight: 4.0, air: 5.0, width: 4.5, finish: false },
-      WARM:  { tone: 4.2, glue: 4.8, weight: 6.0, air: 4.0, width: 4.5, finish: true },
-      WIDE:  { tone: 5.5, glue: 3.8, weight: 4.0, air: 6.2, width: 6.8, finish: true },
-      LOUD:  { tone: 5.2, glue: 5.5, weight: 5.2, air: 5.8, width: 5.0, finish: true }
+      CLEAN: { tone: 5.0, glue: 3.5, weight: 4.0, air: 5.0, width: 4.5, mix: 100.0, finish: false },
+      WARM:  { tone: 4.2, glue: 4.8, weight: 6.0, air: 4.0, width: 4.5, mix: 82.0, finish: true },
+      WIDE:  { tone: 5.5, glue: 3.8, weight: 4.0, air: 6.2, width: 6.8, mix: 88.0, finish: true },
+      LOUD:  { tone: 5.2, glue: 5.5, weight: 5.2, air: 5.8, width: 5.0, mix: 94.0, finish: true }
     };
 
     let meterDisplay = 0;
@@ -767,7 +835,9 @@
       if (readout) {
         readout.textContent = param === 'output_gain'
           ? `${safe >= 0 ? '+' : ''}${safe.toFixed(1)} dB`
-          : safe.toFixed(1);
+          : param === 'mix'
+            ? `${safe.toFixed(0)}%`
+            : safe.toFixed(1);
         readout.classList.add('live');
         clearTimeout(readout._liveTimer);
         readout._liveTimer = setTimeout(() => readout.classList.remove('live'), 160);
@@ -802,17 +872,20 @@
       updateKnob('weight', preset.weight);
       updateKnob('air', preset.air);
       updateKnob('width', preset.width);
+      updateKnob('mix', preset.mix);
       setFinish(!!preset.finish);
     }
 
     function targetMeterValue() {
+      const mixNorm = clamp((values.mix || 100.0) / 100.0, 0, 1);
       const polish = (values.air + values.width) * 0.04;
       const density = values.glue * 0.06 + values.weight * 0.03;
-      const finishBoost = values.finish ? 0.16 : 0.0;
+      const finishBoost = values.finish ? (0.12 + (mixNorm * 0.04)) : 0.0;
       const trimBoost = (values.output_gain || 0.0) * 0.02;
+      const mixLift = 0.02 + (mixNorm * 0.04);
       const raw = values.meter === 'LU'
-        ? 0.34 + density + finishBoost + trimBoost
-        : 0.28 + polish + density + finishBoost + trimBoost;
+        ? 0.30 + density + finishBoost + trimBoost + mixLift
+        : 0.24 + polish + density + finishBoost + trimBoost + mixLift;
       return clamp(raw, 0, 1);
     }
 
@@ -823,7 +896,8 @@
       const visible = Math.round(Math.pow(meterDisplay, 0.84) * bars.length);
       bars.forEach((bar, i) => bar.classList.toggle('active', i < visible));
       const modeTrim = values.mode === 'LOUD' ? 0.18 : values.mode === 'WIDE' ? 0.05 : values.mode === 'WARM' ? 0.10 : 0.0;
-      values.output = ((values.glue - 3.5) * 0.12) + (values.finish ? 0.45 : 0.0) + modeTrim + (values.output_gain || 0.0);
+      const mixNorm = clamp((values.mix || 100.0) / 100.0, 0, 1);
+      values.output = ((((values.glue - 3.5) * 0.12) + (values.finish ? 0.45 : 0.0) + modeTrim) * (0.35 + (mixNorm * 0.65))) + (values.output_gain || 0.0);
       const suffix = values.meter === 'LU' ? ' LU' : ' dB';
       document.getElementById('output-readout').textContent = `${values.output >= 0 ? '+' : ''}${values.output.toFixed(1)}${suffix}`;
       requestAnimationFrame(renderMeter);

@@ -1,0 +1,40 @@
+name: Build Nova Master macOS Plugin
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, copilot/space-by-nova-macos-release ]
+  pull_request:
+    branches: [ main, copilot/space-by-nova-macos-release ]
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install cmake ninja
+
+      - name: Set up JUCE submodules (if needed)
+        run: |
+          git submodule update --init --recursive
+
+      - name: Build Nova Master (VST3, AU, Standalone)
+        run: |
+          bash scripts/build-and-install.sh "Nova Master"
+
+      - name: Archive build outputs
+        if: success()
+        run: |
+          mkdir -p dist/NovaMaster-macOS
+          cp -R build/ plugins/Nova\ Master/build/ dist/NovaMaster-macOS/ || true
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovaMaster-macOS
+          path: dist/NovaMaster-macOS

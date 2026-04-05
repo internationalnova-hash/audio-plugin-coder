@@ -59,6 +59,7 @@ private:
     StereoFilter airShelf;
     StereoFilter airSmoothFilter;
     juce::dsp::Gain<float> outputTrim;
+    juce::AudioBuffer<float> dryBuffer;
 
     double currentSampleRate { 44100.0 };
     float compressorEnvelope { 0.0f };

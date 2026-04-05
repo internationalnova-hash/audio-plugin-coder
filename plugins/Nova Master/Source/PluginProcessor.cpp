@@ -120,6 +120,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout NovaMasterAudioProcessor::cr
         [] (float value, int) { return juce::String (value, 1); }));
 
     layout.add (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { ParameterIDs::mix, 1 },
+        "Mix",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 0.01f),
+        100.0f,
+        "%",
+        juce::AudioProcessorParameter::genericParameter,
+        [] (float value, int) { return juce::String (juce::roundToInt (value)) + " %"; }));
+
+    layout.add (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { ParameterIDs::outputGain, 1 },
         "Output",
         juce::NormalisableRange<float> (-12.0f, 12.0f, 0.01f),
@@ -229,6 +238,9 @@ void NovaMasterAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
     airSmoothFilter.reset();
     outputTrim.reset();
 
+    dryBuffer.setSize (static_cast<int> (spec.numChannels), samplesPerBlock, false, false, true);
+    dryBuffer.clear();
+
     compressorEnvelope = 0.0f;
     compressorGainReductionDb = 0.0f;
     limiterGainReductionDb = 0.0f;
@@ -244,6 +256,7 @@ void NovaMasterAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
 
 void NovaMasterAudioProcessor::releaseResources()
 {
+    dryBuffer.setSize (0, 0);
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -271,11 +284,18 @@ void NovaMasterAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     if (buffer.getNumSamples() == 0)
         return;
 
+    if (dryBuffer.getNumChannels() < totalNumOutputChannels || dryBuffer.getNumSamples() < buffer.getNumSamples())
+        dryBuffer.setSize (totalNumOutputChannels, buffer.getNumSamples(), false, false, true);
+
+    for (auto channel = 0; channel < totalNumOutputChannels; ++channel)
+        dryBuffer.copyFrom (channel, 0, buffer, channel, 0, buffer.getNumSamples());
+
     const auto tone = apvts.getRawParameterValue (ParameterIDs::tone)->load();
     const auto glue = apvts.getRawParameterValue (ParameterIDs::glue)->load();
     const auto weight = apvts.getRawParameterValue (ParameterIDs::weight)->load();
     const auto air = apvts.getRawParameterValue (ParameterIDs::air)->load();
     const auto width = apvts.getRawParameterValue (ParameterIDs::width)->load();
+    const auto mix = apvts.getRawParameterValue (ParameterIDs::mix)->load();
     const auto outputGainDb = apvts.getRawParameterValue (ParameterIDs::outputGain)->load();
     const auto finishOn = apvts.getRawParameterValue (ParameterIDs::finishMode)->load() > 0.5f;
     const auto modeIndex = static_cast<int> (apvts.getRawParameterValue (ParameterIDs::modePreset)->load());
@@ -287,6 +307,7 @@ void NovaMasterAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     const auto weightNorm = juce::jlimit (0.0f, 1.0f, weight / 10.0f);
     const auto airNorm = juce::jlimit (0.0f, 1.0f, air / 10.0f);
     const auto widthNorm = juce::jlimit (0.0f, 1.0f, width / 10.0f);
+    const auto mixNorm = juce::jlimit (0.0f, 1.0f, mix / 100.0f);
 
     const auto tiltDb = -3.0f + (toneNorm * 6.0f) + ((modeIndex == 1) ? -0.25f : (modeIndex == 2 ? 0.25f : 0.0f));
     const auto lowTiltGainDb = -tiltDb * 0.5f;
@@ -424,12 +445,23 @@ void NovaMasterAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             buffer.setSample (1, sample, right);
     }
 
+
+    const auto numChannels = juce::jmax (1, totalNumOutputChannels);
+
+    for (int channel = 0; channel < numChannels; ++channel)
+    {
+        auto* wetData = buffer.getWritePointer (channel);
+        const auto* dryData = dryBuffer.getReadPointer (channel);
+
+        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+            wetData[sample] = (dryData[sample] * (1.0f - mixNorm)) + (wetData[sample] * mixNorm);
+    }
+
     outputTrim.setGainDecibels (outputGainDb);
     outputTrim.process (wetContext);
 
     float peakAccumulator = 0.0f;
     double squaredSum = 0.0;
-    const auto numChannels = juce::jmax (1, totalNumOutputChannels);
 
     for (int channel = 0; channel < numChannels; ++channel)
     {

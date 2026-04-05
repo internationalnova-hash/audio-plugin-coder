@@ -14,6 +14,7 @@ NovaMasterAudioProcessorEditor::NovaMasterAudioProcessorEditor (NovaMasterAudioP
     weightAttachment = std::make_unique<juce::WebSliderParameterAttachment> (*processorRef.apvts.getParameter (ParameterIDs::weight), weightRelay, nullptr);
     airAttachment = std::make_unique<juce::WebSliderParameterAttachment> (*processorRef.apvts.getParameter (ParameterIDs::air), airRelay, nullptr);
     widthAttachment = std::make_unique<juce::WebSliderParameterAttachment> (*processorRef.apvts.getParameter (ParameterIDs::width), widthRelay, nullptr);
+    mixAttachment = std::make_unique<juce::WebSliderParameterAttachment> (*processorRef.apvts.getParameter (ParameterIDs::mix), mixRelay, nullptr);
     outputGainAttachment = std::make_unique<juce::WebSliderParameterAttachment> (*processorRef.apvts.getParameter (ParameterIDs::outputGain), outputGainRelay, nullptr);
     finishModeAttachment = std::make_unique<juce::WebSliderParameterAttachment> (*processorRef.apvts.getParameter (ParameterIDs::finishMode), finishModeRelay, nullptr);
     modePresetAttachment = std::make_unique<juce::WebSliderParameterAttachment> (*processorRef.apvts.getParameter (ParameterIDs::modePreset), modePresetRelay, nullptr);
@@ -85,6 +86,7 @@ juce::WebBrowserComponent::Options NovaMasterAudioProcessorEditor::createWebOpti
                      .withOptionsFrom (editor.weightRelay)
                      .withOptionsFrom (editor.airRelay)
                      .withOptionsFrom (editor.widthRelay)
+                     .withOptionsFrom (editor.mixRelay)
                      .withOptionsFrom (editor.outputGainRelay)
                      .withOptionsFrom (editor.finishModeRelay)
                      .withOptionsFrom (editor.modePresetRelay)

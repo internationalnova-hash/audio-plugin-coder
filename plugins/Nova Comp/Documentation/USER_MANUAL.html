@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nova Level User Manual</title>
+  <style>
+    :root { --bg:#f2ece3; --panel:#fffdfa; --ink:#312821; --soft:#6b5d4e; --accent:#af8c56; --line:#e0d0ba; }
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#f4efe8 0%,#eadfce 100%);color:var(--ink);font:16px/1.65 "Avenir Next","Segoe UI",sans-serif} .wrap{max-width:980px;margin:0 auto;padding:32px 20px 48px}.hero,section{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 24px rgba(87,62,28,.06)}.hero{padding:28px;margin-bottom:18px}h1,h2{margin:0 0 10px;font-family:Georgia,serif}h1{font-size:2.35rem}.subtitle{color:var(--soft);letter-spacing:.12em;text-transform:uppercase;font-size:.85rem}.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.chip{padding:7px 12px;border-radius:999px;background:#f1e6d8;border:1px solid #e4d3bc;font-size:.9rem}section{padding:22px;margin-top:16px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #eadbc4;padding:10px 12px;vertical-align:top;text-align:left}th{background:#f6efe5}code{background:#f4ebdf;padding:2px 6px;border-radius:6px}blockquote{margin:12px 0 0;padding:10px 14px;border-left:4px solid var(--accent);background:#fbf7f1;color:#4b4035}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="subtitle">Current V1 Build</div>
+      <h1>Nova Level User Manual</h1>
+      <p><strong>Optical Dynamics Processor</strong> &nbsp; <span style="color:#6b5d4e">Internal build folder: <code>Nova Comp</code></span></p>
+      <p><code>Nova Level</code> is designed around one idea: turn one main knob and the source sounds more controlled, polished, and expensive.</p>
+      <div class="chips"><div class="chip">Fast Leveling</div><div class="chip">Mode Control</div><div class="chip">Tone-Aware Compression</div><div class="chip">Magic Polish</div></div>
+    </div>
+
+    <section>
+      <h2>Main Controls</h2>
+      <table>
+        <thead><tr><th>Control</th><th>What You Hear</th><th>What It Changes in the DSP</th></tr></thead>
+        <tbody>
+          <tr><td><code>COMPRESSION</code></td><td>More leveling, control, and density</td><td>Lowers effective threshold and increases how much compression can happen in the selected mode.</td></tr>
+          <tr><td><code>TONE SHAPING</code></td><td>Warmer on the left, brighter on the right</td><td>Applies tilt EQ and changes how much upper content influences the detector.</td></tr>
+          <tr><td><code>OUTPUT</code></td><td>Matches loudness after compression</td><td>Adds final gain from <code>-12 dB</code> to <code>+12 dB</code>.</td></tr>
+          <tr><td><code>GR / OUT</code></td><td>Changes what the meter shows</td><td>Switches the meter display only. It does not change the audio.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Mode Buttons</h2>
+      <table>
+        <thead><tr><th>Mode</th><th>Feel</th><th>Backend Change</th></tr></thead>
+        <tbody>
+          <tr><td><code>SMOOTH</code></td><td>Gentle and forgiving</td><td>Lower ratio, slower attack, longer program-dependent release, wider knee.</td></tr>
+          <tr><td><code>PUNCH</code></td><td>Tighter and more assertive</td><td>Medium ratio, faster attack, shorter release, firmer knee.</td></tr>
+          <tr><td><code>LIMIT</code></td><td>Strongest control</td><td>Higher ratio, fastest attack, tighter knee, more limiter-like behavior.</td></tr>
+        </tbody>
+      </table>
+      <blockquote>These buttons are fully mapped to the DSP. They change backend behavior even when the visible knobs stay in place.</blockquote>
+    </section>
+
+    <section>
+      <h2>MAGIC Button</h2>
+      <p><code>MAGIC</code> is a real DSP enhancement layer. When enabled it adds top smoothing, smarter detector behavior, slightly more gain reduction when useful, smoother release behavior, extra warmth, subtle stereo polish, and a bit more auto-trim balancing.</p>
+      <blockquote><code>MAGIC</code> does not trigger a hidden preset by itself and does not automatically move the visible knobs.</blockquote>
+    </section>
+
+    <section>
+      <h2>Presets</h2>
+      <p><code>VOCAL</code>, <code>DRUMS</code>, <code>BASS</code>, and <code>MASTER</code> are real recall buttons. They set the actual controls to musical starting points and may turn <code>MAGIC</code> on or off depending on the source.</p>
+    </section>
+  </div>
+</body>
+</html>

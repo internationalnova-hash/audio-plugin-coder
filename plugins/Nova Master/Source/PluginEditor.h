@@ -26,6 +26,7 @@ private:
     juce::WebSliderRelay weightRelay { ParameterIDs::weight };
     juce::WebSliderRelay airRelay { ParameterIDs::air };
     juce::WebSliderRelay widthRelay { ParameterIDs::width };
+    juce::WebSliderRelay mixRelay { ParameterIDs::mix };
     juce::WebSliderRelay outputGainRelay { ParameterIDs::outputGain };
     juce::WebSliderRelay finishModeRelay { ParameterIDs::finishMode };
     juce::WebSliderRelay modePresetRelay { ParameterIDs::modePreset };
@@ -48,6 +49,7 @@ private:
     std::unique_ptr<juce::WebSliderParameterAttachment> weightAttachment;
     std::unique_ptr<juce::WebSliderParameterAttachment> airAttachment;
     std::unique_ptr<juce::WebSliderParameterAttachment> widthAttachment;
+    std::unique_ptr<juce::WebSliderParameterAttachment> mixAttachment;
     std::unique_ptr<juce::WebSliderParameterAttachment> outputGainAttachment;
     std::unique_ptr<juce::WebSliderParameterAttachment> finishModeAttachment;
     std::unique_ptr<juce::WebSliderParameterAttachment> modePresetAttachment;

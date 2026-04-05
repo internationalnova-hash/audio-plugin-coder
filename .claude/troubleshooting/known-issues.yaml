@@ -359,3 +359,17 @@ issues:
   frequency: 1
   last_occurred: 2026-04-04
   attempts_before_resolution: 1
+
+- id: build-022
+  title: "[Auto] /workspaces/audio-plugin-coder/plugins/Nova Master/Source/PluginProcessor.cpp:448:37: error: ‘numC"
+  category: build
+  severity: high
+  symptoms:
+    - "/workspaces/audio-plugin-coder/plugins/Nova Master/Source/PluginProcessor.cpp:448:37: error: ‘numChannels’ was not declared in this scope"
+  error_patterns:
+    - "error:.*"
+  resolution_status: investigating
+  resolution_file: resolutions/build-022.md
+  frequency: 1
+  last_occurred: 2026-04-05
+  attempts_before_resolution: 1
