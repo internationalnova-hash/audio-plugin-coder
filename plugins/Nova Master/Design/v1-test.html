@@ -41,14 +41,14 @@
     body {
       display: grid;
       place-items: center;
-      padding: 14px;
+      padding: 10px;
     }
 
     .plugin {
       position: relative;
-      width: min(1136px, 100vw);
-      height: min(652px, 100vh);
-      border-radius: 30px;
+      width: min(980px, 100vw);
+      height: min(580px, 100vh);
+      border-radius: 26px;
       overflow: hidden;
       isolation: isolate;
       background: linear-gradient(180deg, #f8f2ea 0%, var(--face) 24%, var(--face-shade) 100%);
@@ -84,8 +84,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 16px;
-      padding: 26px 38px 10px;
+      gap: 14px;
+      padding: 18px 26px 8px;
     }
 
     .title-block {
@@ -125,7 +125,7 @@
     .title {
       margin: 0;
       font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-      font-size: 56px;
+      font-size: 46px;
       line-height: 0.96;
       letter-spacing: 0.07em;
       color: #4f5966;
@@ -152,7 +152,7 @@
     .tagline {
       margin-top: 0;
       font-family: "Snell Roundhand", "Apple Chancery", "URW Chancery L", "Brush Script MT", cursive;
-      font-size: 30px;
+      font-size: 24px;
       color: #67717f;
       text-shadow: 0 1px 0 rgba(255,255,255,0.62);
     }
@@ -167,12 +167,12 @@
 
     .inner-panel {
       position: absolute;
-      left: 22px;
-      right: 22px;
-      top: 114px;
-      bottom: 84px;
-      border-radius: 24px;
-      padding: 20px 20px 18px;
+      left: 16px;
+      right: 16px;
+      top: 94px;
+      bottom: 72px;
+      border-radius: 20px;
+      padding: 16px 16px 14px;
       background: linear-gradient(180deg, rgba(250,248,244,0.98) 0%, rgba(235,229,220,0.96) 52%, rgba(223,215,205,0.97) 100%);
       border: 1px solid rgba(163, 172, 182, 0.28);
       box-shadow:
@@ -208,8 +208,8 @@
     .layout {
       position: relative;
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr)) 0.96fr;
-      gap: 16px;
+      grid-template-columns: repeat(5, minmax(0, 1fr)) 0.92fr;
+      gap: 12px;
       height: 100%;
       align-items: stretch;
     }
@@ -225,8 +225,8 @@
       position: relative;
       overflow: hidden;
       justify-content: center;
-      gap: 8px;
-      padding: 18px 10px 14px;
+      gap: 6px;
+      padding: 12px 8px 10px;
       border-radius: 22px;
       background: linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(216,224,232,0.2) 100%);
       border: 1px solid rgba(174, 182, 191, 0.3);
@@ -271,8 +271,8 @@
 
     .knob {
       position: relative;
-      width: 132px;
-      height: 132px;
+      width: 116px;
+      height: 116px;
       border-radius: 50%;
       border: 1px solid rgba(111, 121, 133, 0.74);
       background:
@@ -369,8 +369,8 @@
     .precision-rail {
       position: relative;
       overflow: visible;
-      gap: 10px;
-      padding: 16px 12px 14px;
+      gap: 8px;
+      padding: 14px 10px 12px;
       min-height: 100%;
       justify-content: flex-start;
       border-radius: 22px;
@@ -464,9 +464,9 @@
     }
 
     .meter {
-      width: 40px;
-      height: clamp(156px, 28vh, 180px);
-      padding: 8px 6px;
+      width: 36px;
+      height: clamp(132px, 23vh, 150px);
+      padding: 7px 5px;
       border-radius: 16px;
       border: 1px solid rgba(162, 174, 185, 0.38);
       background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(229,236,243,0.94) 100%);
@@ -496,23 +496,32 @@
       color: #7b8792;
     }
 
+    .rail-core {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+    }
+
     .trim-stack {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
-      width: 100%;
-      padding: 4px 0 2px;
+      gap: 5px;
+      width: 68px;
+      padding: 0;
+      flex-shrink: 0;
     }
 
     .trim-knob {
-      width: 78px;
-      height: 78px;
+      width: 64px;
+      height: 64px;
     }
 
     .trim-knob::after {
       top: 8px;
-      height: 20px;
+      height: 18px;
       width: 3px;
     }
 
@@ -521,10 +530,10 @@
     }
 
     .trim-readout {
-      min-width: 74px;
-      padding: 6px 8px;
-      font-size: 11px;
-      letter-spacing: 0.06em;
+      min-width: 68px;
+      padding: 5px 6px;
+      font-size: 10px;
+      letter-spacing: 0.04em;
     }
 
     .finish-button {
@@ -586,9 +595,9 @@
 
     .microcopy {
       position: absolute;
-      left: 74px;
-      right: 228px;
-      bottom: 66px;
+      left: 56px;
+      right: 190px;
+      bottom: 54px;
       text-align: center;
       font-size: 10px;
       font-weight: 700;
@@ -600,9 +609,9 @@
 
     .mode-buttons {
       position: absolute;
-      left: 56px;
-      right: 212px;
-      bottom: 16px;
+      left: 42px;
+      right: 180px;
+      bottom: 12px;
       display: flex;
       gap: 8px;
       padding: 6px;
@@ -614,8 +623,8 @@
 
     .mode-buttons button {
       flex: 1;
-      height: 38px;
-      font-size: 11px;
+      height: 34px;
+      font-size: 10px;
       font-weight: 800;
       letter-spacing: 0.2em;
     }
@@ -682,22 +691,24 @@
             <button data-meter="OUT" class="active">OUT</button>
             <button data-meter="LU">LU</button>
           </div>
-          <div class="meter" id="meter">
-            <span class="meter-bar"></span>
-            <span class="meter-bar"></span>
-            <span class="meter-bar"></span>
-            <span class="meter-bar"></span>
-            <span class="meter-bar"></span>
-            <span class="meter-bar"></span>
-            <span class="meter-bar"></span>
-            <span class="meter-bar"></span>
-            <span class="meter-bar"></span>
-            <span class="meter-bar"></span>
-          </div>
-          <div class="mini-label">TRIM</div>
-          <div class="trim-stack">
-            <div class="knob trim-knob" data-param="output_gain" data-min="-6" data-max="6"><div class="ring"></div></div>
-            <div class="readout trim-readout" data-readout="output_gain">+0.0 dB</div>
+          <div class="rail-core">
+            <div class="meter" id="meter">
+              <span class="meter-bar"></span>
+              <span class="meter-bar"></span>
+              <span class="meter-bar"></span>
+              <span class="meter-bar"></span>
+              <span class="meter-bar"></span>
+              <span class="meter-bar"></span>
+              <span class="meter-bar"></span>
+              <span class="meter-bar"></span>
+              <span class="meter-bar"></span>
+              <span class="meter-bar"></span>
+            </div>
+            <div class="trim-stack">
+              <div class="mini-label">TRIM</div>
+              <div class="knob trim-knob" data-param="output_gain" data-min="-12" data-max="12"><div class="ring"></div></div>
+              <div class="readout trim-readout" data-readout="output_gain">+0.0 dB</div>
+            </div>
           </div>
           <div class="readout" id="output-readout">+0.0 dB</div>
           <div class="rail-note">ceiling aware</div>
@@ -840,7 +851,11 @@
         knob.setPointerCapture(event.pointerId);
       });
 
-      knob.addEventListener('pointermove', (event) => { if (dragging) move(event.clientY); });
+      knob.addEventListener('pointermove', (event) => {
+        if (!dragging) return;
+        const deltaX = event.clientX - event.pressure * 0;
+        move(event.clientY - deltaX);
+      });
       knob.addEventListener('pointerup', () => {
         dragging = false;
         knob.classList.remove('active');

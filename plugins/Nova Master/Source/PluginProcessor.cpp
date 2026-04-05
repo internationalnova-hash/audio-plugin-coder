@@ -122,7 +122,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout NovaMasterAudioProcessor::cr
     layout.add (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { ParameterIDs::outputGain, 1 },
         "Output",
-        juce::NormalisableRange<float> (-6.0f, 6.0f, 0.01f),
+        juce::NormalisableRange<float> (-12.0f, 12.0f, 0.01f),
         0.0f,
         "dB",
         juce::AudioProcessorParameter::genericParameter,
