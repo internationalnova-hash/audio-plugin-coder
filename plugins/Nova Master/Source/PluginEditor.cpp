@@ -51,8 +51,8 @@ void NovaMasterAudioProcessorEditor::timerCallback()
 
     const auto outputLevel = processorRef.outputPeakLevel.load();
     const auto loudnessLike = juce::jlimit (0.0f, 1.0f,
-                                            (outputLevel * 0.75f)
-                                            + (processorRef.limiterReductionLevel.load() * 0.45f));
+                                            processorRef.outputRmsLevel.load()
+                                            + (processorRef.limiterReductionLevel.load() * 0.12f));
     const auto isHot = processorRef.outputIsHot.load();
 
     const auto meterJs = "if (window.updateOutputMeter) { window.updateOutputMeter("

@@ -42,6 +42,7 @@ public:
     juce::AudioProcessorValueTreeState apvts;
 
     std::atomic<float> outputPeakLevel { 0.0f };
+    std::atomic<float> outputRmsLevel { 0.0f };
     std::atomic<float> limiterReductionLevel { 0.0f };
     std::atomic<bool> outputIsHot { false };
 
@@ -64,6 +65,7 @@ private:
     float compressorGainReductionDb { 0.0f };
     float limiterGainReductionDb { 0.0f };
     float outputPeakHold { 0.0f };
+    float outputRmsHold { 0.0f };
     float sideLowState { 0.0f };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NovaMasterAudioProcessor)

@@ -19,10 +19,10 @@ namespace
     {
         switch (juce::jlimit (0, 3, modeIndex))
         {
-            case 1: return { 0.18f, 0.00f, 0.18f, 0.75f, -0.85f }; // Warm
-            case 2: return { 0.05f, 0.18f, 0.05f, 0.70f, -0.90f }; // Wide
-            case 3: return { 0.10f, 0.06f, 0.30f, 1.00f, -0.80f }; // Loud
-            default: return { 0.00f, 0.00f, 0.00f, 0.55f, -0.95f }; // Clean
+            case 1: return { 0.18f, 0.00f, 0.18f, 0.75f, -0.82f }; // Warm
+            case 2: return { 0.05f, 0.18f, 0.05f, 0.70f, -0.84f }; // Wide
+            case 3: return { 0.10f, 0.06f, 0.30f, 1.00f, -0.78f }; // Loud
+            default: return { 0.00f, 0.00f, 0.00f, 0.55f, -0.90f }; // Clean
         }
     }
 
@@ -54,7 +54,9 @@ namespace
     float applySoftCeiling (float sample, float ceilingLinear) noexcept
     {
         const auto safeCeiling = juce::jmax (0.05f, ceilingLinear);
-        return std::tanh (sample / safeCeiling) * safeCeiling;
+        const auto normalised = sample / safeCeiling;
+        const auto shaped = std::tanh (normalised * 0.82f) / std::tanh (0.82f);
+        return shaped * safeCeiling;
     }
 }
 
@@ -231,9 +233,11 @@ void NovaMasterAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
     compressorGainReductionDb = 0.0f;
     limiterGainReductionDb = 0.0f;
     outputPeakHold = 0.0f;
+    outputRmsHold = 0.0f;
     sideLowState = 0.0f;
 
     outputPeakLevel.store (0.0f);
+    outputRmsLevel.store (0.0f);
     limiterReductionLevel.store (0.0f);
     outputIsHot.store (false);
 }
@@ -322,18 +326,24 @@ void NovaMasterAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     const auto attackCoeff = std::exp (-1.0f / (0.001f * attackMs * static_cast<float> (currentSampleRate)));
     const auto releaseCoeff = std::exp (-1.0f / (0.001f * releaseMs * static_cast<float> (currentSampleRate)));
 
-    const auto harmonicDrive = 1.0f + (glueNorm * 0.03f) + (mode.warmthBias * 0.04f) + (finishOn ? (0.05f + (0.03f * mode.limiterBias)) : 0.0f);
-    const auto harmonicBlend = juce::jlimit (0.08f, 0.28f,
-                                             0.08f + (glueNorm * 0.06f) + (finishOn ? 0.07f : 0.0f));
+    const auto harmonicDrive = 1.0f + (glueNorm * 0.03f) + (mode.warmthBias * 0.04f)
+                             + (finishOn ? (0.06f + (0.03f * mode.limiterBias)) : 0.0f);
+    const auto harmonicBlend = juce::jlimit (0.08f, 0.30f,
+                                             0.08f + (glueNorm * 0.06f) + (finishOn ? 0.08f : 0.0f));
     const auto sideBoost = 1.0f + (widthNorm * (0.30f + mode.widthBias)) + (finishOn ? 0.05f : 0.0f);
 
-    const auto limiterThresholdDb = -4.0f + (glueNorm * 2.0f) + (mode.limiterBias * 0.4f);
+    const auto limiterThresholdDb = finishOn
+        ? (-3.2f + (glueNorm * 1.0f) + (mode.limiterBias * 0.35f))
+        : 0.5f;
     const auto limiterThresholdLinear = juce::Decibels::decibelsToGain (limiterThresholdDb);
     const auto ceilingDb = finishOn ? mode.ceilingDb : -0.5f;
     const auto ceilingLinear = juce::Decibels::decibelsToGain (ceilingDb);
-    const auto finishDrive = finishOn ? (1.05f + (glueNorm * 0.05f) + (0.02f * mode.limiterBias)) : 1.0f;
-    const auto limiterAttackRate = finishOn ? 0.18f : 0.32f;
-    const auto limiterReleaseRate = finishOn ? 0.018f : 0.006f;
+    const auto finishDrive = finishOn ? (1.04f + (glueNorm * 0.04f) + (0.015f * mode.limiterBias)) : 1.0f;
+    const auto preLimiterGain = juce::Decibels::decibelsToGain (finishOn ? 3.0f : 0.0f);
+    const auto limiterRatio = 2.6f + (0.8f * mode.limiterBias);
+    const auto limiterKneeDb = finishOn ? 3.0f : 0.0f;
+    const auto limiterAttackRate = finishOn ? (0.16f + (0.03f * mode.limiterBias)) : 0.32f;
+    const auto limiterReleaseRate = finishOn ? 0.010f : 0.006f;
 
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
@@ -377,13 +387,20 @@ void NovaMasterAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         left *= finishDrive;
         right *= finishDrive;
 
+        if (finishOn)
+        {
+            left *= preLimiterGain;
+            right *= preLimiterGain;
+        }
+
         const auto peak = juce::jmax (std::abs (left), std::abs (right));
         auto targetLimiterGrDb = 0.0f;
 
         if (finishOn && peak > limiterThresholdLinear)
         {
-            const auto over = juce::jmax (0.0f, (peak / limiterThresholdLinear) - 1.0f);
-            targetLimiterGrDb = juce::jlimit (0.0f, 5.0f, over * (2.1f + (1.4f * mode.limiterBias)));
+            const auto overDb = juce::Decibels::gainToDecibels (peak / limiterThresholdLinear, 0.0f);
+            targetLimiterGrDb = juce::jlimit (0.0f, 6.0f,
+                                              computeGainReductionDb (overDb, limiterRatio, limiterKneeDb));
         }
 
         if (peak > ceilingLinear)
@@ -407,7 +424,7 @@ void NovaMasterAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             buffer.setSample (1, sample, right);
     }
 
-    outputTrim.setGainDecibels (outputGainDb + (finishOn ? -0.20f : 0.0f));
+    outputTrim.setGainDecibels (outputGainDb + (finishOn ? 0.10f : 0.0f));
     outputTrim.process (wetContext);
 
     float peakAccumulator = 0.0f;
@@ -426,10 +443,13 @@ void NovaMasterAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     }
 
     const auto rms = std::sqrt (squaredSum / static_cast<double> (buffer.getNumSamples() * numChannels));
-    juce::ignoreUnused (rms);
+    const auto rmsNormalised = juce::jlimit (0.0f, 1.0f, static_cast<float> (rms * 2.1));
 
     outputPeakHold = juce::jmax (peakAccumulator, outputPeakHold * 0.93f);
+    outputRmsHold = juce::jmax (rmsNormalised, outputRmsHold * 0.92f);
+
     outputPeakLevel.store (outputPeakHold);
+    outputRmsLevel.store (outputRmsHold);
     limiterReductionLevel.store (juce::jlimit (0.0f, 1.0f, limiterGainReductionDb / 6.0f));
     outputIsHot.store (outputPeakHold > 0.92f);
 }
