@@ -7,6 +7,7 @@ on:
       - 'nova-tone-macos-v*'
       - 'nova-heat-macos-v*'
       - 'nova-level-macos-v*'
+      - 'nova-master-macos-v*'
   workflow_dispatch:
     inputs:
       plugin:
@@ -21,6 +22,7 @@ on:
           - Nova Tone
           - Nova Heat
           - Nova Comp
+          - Nova Master
           - all
       platforms:
         description: 'Which platforms to build?'
@@ -70,11 +72,13 @@ jobs:
               echo 'matrix={"plugin":["Nova Tone"]}' >> $GITHUB_OUTPUT
             elif [[ "${GITHUB_REF_NAME}" == nova-level-macos-v* ]]; then
               echo 'matrix={"plugin":["Nova Comp"]}' >> $GITHUB_OUTPUT
+            elif [[ "${GITHUB_REF_NAME}" == nova-master-macos-v* ]]; then
+              echo 'matrix={"plugin":["Nova Master"]}' >> $GITHUB_OUTPUT
             else
               echo 'matrix={"plugin":["Space By Nova"]}' >> $GITHUB_OUTPUT
             fi
           elif [ "${{ inputs.plugin }}" == "all" ]; then
-            echo 'matrix={"plugin":["CloudWash","gnarly2","nf_gnarly","Space By Nova","Nova Tone","Nova Heat","Nova Comp"]}' >> $GITHUB_OUTPUT
+            echo 'matrix={"plugin":["CloudWash","gnarly2","nf_gnarly","Space By Nova","Nova Tone","Nova Heat","Nova Comp","Nova Master"]}' >> $GITHUB_OUTPUT
           else
             echo 'matrix={"plugin":["${{ inputs.plugin }}"]}' >> $GITHUB_OUTPUT
           fi
