@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APC Plugin UI Gallery</title>
+  <style>
+    body {
+      background: #222;
+      color: #fff;
+      font-family: 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      text-align: center;
+      margin: 32px 0 16px 0;
+      font-size: 2.2em;
+      letter-spacing: 0.04em;
+    }
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 32px;
+      padding: 32px;
+    }
+    .plugin-card {
+      background: #181818;
+      border-radius: 18px;
+      box-shadow: 0 2px 16px #0008;
+      width: 480px;
+      min-height: 320px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px 0 24px 0;
+    }
+    .plugin-card h2 {
+      margin: 0 0 12px 0;
+      font-size: 1.3em;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: #ffd700;
+    }
+    .plugin-frame {
+      width: 440px;
+      height: 280px;
+      border: none;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 1px 8px #0006;
+      margin-bottom: 8px;
+    }
+    @media (max-width: 600px) {
+      .plugin-card, .plugin-frame { width: 98vw; min-width: 0; }
+      .plugin-frame { height: 48vw; min-height: 180px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>APC Plugin UI Gallery</h1>
+  <div class="gallery">
+    <div class="plugin-card">
+      <h2>CloudWash</h2>
+      <iframe class="plugin-frame" src="../../CloudWash/Design/v1-test.html"></iframe>
+    </div>
+    <div class="plugin-card">
+      <h2>Nova Comp</h2>
+      <iframe class="plugin-frame" src="../../Nova Comp/Design/v1-test.html"></iframe>
+    </div>
+    <div class="plugin-card">
+      <h2>Nova Heat</h2>
+      <iframe class="plugin-frame" src="../../Nova Heat/Design/v1-test.html"></iframe>
+    </div>
+    <div class="plugin-card">
+      <h2>Nova Master</h2>
+      <iframe class="plugin-frame" src="../../Nova Master/Design/v1-test.html"></iframe>
+    </div>
+    <div class="plugin-card">
+      <h2>Nova Tone</h2>
+      <iframe class="plugin-frame" src="../../Nova Tone/Design/v1-test.html"></iframe>
+    </div>
+    <div class="plugin-card">
+      <h2>Space By Nova</h2>
+      <iframe class="plugin-frame" src="../../Space By Nova/Design/v1-test.html"></iframe>
+    </div>
+    <div class="plugin-card">
+      <h2>gnarly2</h2>
+      <iframe class="plugin-frame" src="../../gnarly2/Design/v1-test.html"></iframe>
+    </div>
+    <div class="plugin-card">
+      <h2>nf_gnarly</h2>
+      <iframe class="plugin-frame" src="../../nf_gnarly/Design/v1-test.html"></iframe>
+    </div>
+  </div>
+</body>
+</html>

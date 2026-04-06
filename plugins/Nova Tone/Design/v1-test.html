@@ -396,6 +396,62 @@
       display: flex;
       justify-content: space-between;
     }
+
+    .nova-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 0;
+      position: relative;
+      min-height: 64px;
+    }
+    .nova-logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      margin-left: -10px;
+      border-radius: 10px;
+      background: rgba(60, 56, 48, 0.10);
+      box-shadow: 0 2px 8px 0 rgba(60,56,48,0.07);
+      backdrop-filter: blur(1.5px);
+    }
+    .nova-logo {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      filter: grayscale(0.1) brightness(0.93) contrast(1.08);
+      opacity: 1;
+    }
+    .nova-title-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1.0;
+      margin-top: 2px;
+    }
+    .nova-title-nova {
+      font-size: 24px;
+      font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      color: #353535;
+      margin: 0 0 2px 0;
+      padding: 0;
+      opacity: 0.97;
+    }
+    .nova-title-master {
+      font-size: 30px;
+      font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      font-weight: 950;
+      letter-spacing: 0.04em;
+      color: #282420;
+      margin: 0;
+      padding: 0;
+      line-height: 1.0;
+      opacity: 0.98;
+    }
   </style>
 </head>
 <body>

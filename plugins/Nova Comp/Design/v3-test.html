@@ -5,6 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nova Level — v3 Triangle Preview</title>
   <style>
+        .nova-header {
+          display: flex;
+          align-items: flex-start;
+          gap: 18px;
+          margin-bottom: 0;
+          position: relative;
+          min-height: 64px;
+          padding: 0;
+          z-index: 10;
+        }
+        .nova-logo-container {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          margin-left: -10px;
+          border-radius: 10px;
+          background: rgba(60, 56, 48, 0.10);
+          box-shadow: 0 2px 8px 0 rgba(60,56,48,0.07);
+          backdrop-filter: blur(1.5px);
+        }
+        .nova-logo {
+          width: 32px;
+          height: 32px;
+          object-fit: contain;
+          filter: grayscale(0.1) brightness(0.93) contrast(1.08);
+          opacity: 1;
+        }
+        .nova-title-nova {
+          font-size: 24px;
+          font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+          font-weight: 700;
+          letter-spacing: 0.13em;
+          color: #353535;
+          margin: 0 0 2px 0;
+          padding: 0;
+          opacity: 0.97;
+        }
+        .nova-title-master {
+          font-size: 30px;
+          font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+          font-weight: 950;
+          letter-spacing: 0.04em;
+          color: #282420;
+          margin: 0;
+          padding: 0;
+          line-height: 1.0;
+          opacity: 0.98;
+        }
     :root {
       --face: #eee5da;
       --face-shade: #ddd4c7;
@@ -449,12 +499,18 @@
 </head>
 <body>
   <div class="plugin">
-    <div class="header">
-      <div>
-        <h1 class="title">NOVA LEVEL</h1>
-        <div class="subtitle">OPTICAL DYNAMICS PROCESSOR</div>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; padding:18px 26px 0 26px; margin-bottom:2px;">
+      <div class="nova-header" style="margin-bottom:0; min-height:64px; padding:0;">
+        <div class="nova-logo-container">
+          <img src="n_logo.png" alt="N" class="nova-logo" />
+        </div>
+        <div class="nova-title-stack">
+          <span class="nova-title-nova">NOVA</span>
+          <br style="line-height:0; margin:0; padding:0;" />
+          <span class="nova-title-master">LEVEL</span>
+        </div>
       </div>
-      <div class="tagline">by International Nova</div>
+      <div class="tagline" style="font-size:22px; text-align:right; margin-top:6px;">by International Nova</div>
     </div>
 
     <div class="inner-panel">
@@ -497,21 +553,26 @@
             </div>
 
             <div class="meter-stack">
-              <div class="meter-toggle">
-                <button class="active" data-meter="GR">GR</button>
-                <button data-meter="OUT">OUT</button>
-              </div>
-              <div class="meter" id="meter">
-                <span class="meter-bar"></span>
-                <span class="meter-bar"></span>
-                <span class="meter-bar"></span>
-                <span class="meter-bar"></span>
-                <span class="meter-bar"></span>
-                <span class="meter-bar"></span>
-                <span class="meter-bar"></span>
-                <span class="meter-bar"></span>
-                <span class="meter-bar"></span>
-                <span class="meter-bar"></span>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div>
+                  <div class="meter-toggle">
+                    <button class="active" data-meter="GR">GR</button>
+                    <button data-meter="OUT">OUT</button>
+                  </div>
+                  <div class="meter" id="meter">
+                    <span class="meter-bar"></span>
+                    <span class="meter-bar"></span>
+                    <span class="meter-bar"></span>
+                    <span class="meter-bar"></span>
+                    <span class="meter-bar"></span>
+                    <span class="meter-bar"></span>
+                    <span class="meter-bar"></span>
+                    <span class="meter-bar"></span>
+                    <span class="meter-bar"></span>
+                    <span class="meter-bar"></span>
+                  </div>
+                </div>
+                <div id="meter-readout" style="min-width:60px; font-size:1.25em; font-weight:900; color:#b08f54; background:#fff9f1; border-radius:10px; padding:8px 12px; box-shadow:0 1px 4px #d8c28c44; letter-spacing:0.04em; text-align:right;">-0.0 dB</div>
               </div>
             </div>
           </div>
@@ -528,158 +589,33 @@
     </div>
   </div>
 
-  <script>
-    const values = { compression: 4.0, tone: 5.0, output: 0.0, mode: 'SMOOTH', meter: 'GR', magic: false };
-    const presets = {
-      VOCAL: { mode: 'SMOOTH', compression: 4.5, tone: 5.5, output: 2.0, magic: true },
-      BASS: { mode: 'SMOOTH', compression: 5.8, tone: 4.0, output: 2.5, magic: false },
-      DRUMS: { mode: 'PUNCH', compression: 6.0, tone: 5.0, output: 1.5, magic: false },
-      MASTER: { mode: 'SMOOTH', compression: 2.8, tone: 5.0, output: 0.0, magic: true }
-    };
+  <!-- Nova header moved to top -->
+<script>
+// Demo logic for meter readout (replace with real plugin data binding)
+const meterReadout = document.getElementById('meter-readout');
+const meterToggle = document.querySelectorAll('.meter-toggle button');
+let grActive = true;
+let grValue = -6.2; // Example gain reduction
+let outValue = -0.8; // Example output level
 
-    let meterDisplay = 0;
-
-    function clamp(v, min, max) { return Math.min(max, Math.max(min, Number(v) || 0)); }
-
-    function formatValue(param, value) {
-      if (param === 'output') return `${value >= 0 ? '+' : ''}${value.toFixed(1)} dB`;
-      if (param === 'tone') {
-        const tilt = -3 + (value / 10) * 6;
-        return `${tilt >= 0 ? '+' : ''}${tilt.toFixed(1)}`;
-      }
-      return value.toFixed(1);
-    }
-
-    function updateKnob(param, value) {
-      values[param] = value;
-      const knob = document.querySelector(`.knob[data-param="${param}"]`);
-      if (!knob) return;
-      const min = Number(knob.dataset.min);
-      const max = Number(knob.dataset.max);
-      const safe = clamp(value, min, max);
-      const normal = (safe - min) / ((max - min) || 1);
-      const rotation = -42 + normal * 210;
-      knob.querySelector('.ring').style.setProperty('--turn', rotation + 'deg');
-
-      if (param === 'compression') {
-        const arc = knob.querySelector('.feedback-arc');
-        if (arc) {
-          const arcEnd = 18 + normal * 116;
-          arc.style.setProperty('--gr-end', `${arcEnd}deg`);
-          arc.style.opacity = (0.18 + normal * 0.42).toFixed(2);
-        }
-      }
-
-      const readout = document.querySelector(`[data-readout="${param}"]`);
-      if (readout) readout.textContent = formatValue(param, safe);
-    }
-
-    function setMode(mode) {
-      values.mode = mode;
-      document.querySelectorAll('[data-mode]').forEach((button) => {
-        button.classList.toggle('active', button.dataset.mode === mode);
-      });
-    }
-
-    function setMeter(mode) {
-      values.meter = mode;
-      document.querySelectorAll('[data-meter]').forEach((button) => {
-        button.classList.toggle('active', button.dataset.meter === mode);
-      });
-    }
-
-    function setMagic(on) {
-      values.magic = !!on;
-      document.getElementById('magic-toggle').classList.toggle('active', values.magic);
-    }
-
-    function targetMeterValue() {
-      if (values.meter === 'GR') {
-        const modeBoost = values.mode === 'LIMIT' ? 1.4 : values.mode === 'PUNCH' ? 0.8 : 0.4;
-        const raw = (values.compression / 10) * 8.5 + modeBoost + (values.magic ? 0.4 : 0);
-        return clamp(raw, 0, 10);
-      }
-      const raw = 3.5 + Math.max(0, values.output) * 0.28 + (values.magic ? 0.3 : 0);
-      return clamp(raw, 0, 10);
-    }
-
-    function renderMeter() {
-      const target = targetMeterValue();
-      meterDisplay += (target - meterDisplay) * 0.18;
-      const bars = Array.from(document.querySelectorAll('.meter-bar'));
-      const visible = Math.round(Math.pow(meterDisplay / 10, 0.72) * bars.length);
-      bars.forEach((bar, i) => bar.classList.toggle('active', i < visible));
-      requestAnimationFrame(renderMeter);
-    }
-
-    function clearPresetState() {
-      document.querySelectorAll('[data-preset]').forEach((button) => button.classList.remove('active'));
-    }
-
-    function applyPreset(name) {
-      const preset = presets[name];
-      if (!preset) return;
-      clearPresetState();
-      document.querySelector(`[data-preset="${name}"]`).classList.add('active');
-      setMode(preset.mode);
-      updateKnob('compression', preset.compression);
-      updateKnob('tone', preset.tone);
-      updateKnob('output', preset.output);
-      setMagic(!!preset.magic);
-    }
-
-    document.querySelectorAll('.knob').forEach((knob) => {
-      const param = knob.dataset.param;
-      const min = Number(knob.dataset.min);
-      const max = Number(knob.dataset.max);
-      let dragging = false;
-      let startY = 0;
-      let startValue = 0;
-
-      const move = (clientY) => {
-        const delta = startY - clientY;
-        const range = max - min;
-        const next = clamp(startValue + delta * (range / 180), min, max);
-        updateKnob(param, next);
-        clearPresetState();
-      };
-
-      knob.addEventListener('pointerdown', (event) => {
-        dragging = true;
-        startY = event.clientY;
-        startValue = values[param];
-        knob.setPointerCapture(event.pointerId);
-      });
-
-      knob.addEventListener('pointermove', (event) => {
-        if (dragging) move(event.clientY);
-      });
-
-      knob.addEventListener('pointerup', () => { dragging = false; });
-      knob.addEventListener('pointercancel', () => { dragging = false; });
-    });
-
-    document.querySelectorAll('[data-mode]').forEach((button) => {
-      button.addEventListener('click', () => { clearPresetState(); setMode(button.dataset.mode); });
-    });
-
-    document.querySelectorAll('[data-meter]').forEach((button) => {
-      button.addEventListener('click', () => setMeter(button.dataset.meter));
-    });
-
-    document.getElementById('magic-toggle').addEventListener('click', () => setMagic(!values.magic));
-
-    document.querySelectorAll('[data-preset]').forEach((button) => {
-      button.addEventListener('click', () => applyPreset(button.dataset.preset));
-    });
-
-    updateKnob('compression', values.compression);
-    updateKnob('tone', values.tone);
-    updateKnob('output', values.output);
-    setMode(values.mode);
-    setMeter(values.meter);
-    setMagic(false);
-    renderMeter();
-  </script>
+function updateReadout() {
+  if (grActive) {
+    meterReadout.textContent = `${grValue.toFixed(1)} dB`;
+    meterReadout.style.color = '#b08f54';
+  } else {
+    meterReadout.textContent = `${outValue > 0 ? '+' : ''}${outValue.toFixed(1)} dB`;
+    meterReadout.style.color = '#876739';
+  }
+}
+meterToggle.forEach(btn => {
+  btn.addEventListener('click', e => {
+    meterToggle.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    grActive = btn.getAttribute('data-meter') === 'GR';
+    updateReadout();
+  });
+});
+updateReadout();
+</script>
 </body>
 </html>

@@ -25,6 +25,10 @@ if [[ -z "$PLUGIN_NAME" ]]; then
     exit 1
 fi
 
+# Always initialize VISAGE_FLAG as an empty array to avoid unbound variable errors
+VISAGE_FLAG=()
+
+
 # --- PATH RESOLUTION ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_PATH="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -32,6 +36,9 @@ BUILD_DIR="$ROOT_PATH/build"
 PLUGIN_DIR="$ROOT_PATH/plugins/$PLUGIN_NAME"
 STATUS_JSON="$PLUGIN_DIR/status.json"
 PLUGIN_TARGET="$(echo "$PLUGIN_NAME" | tr -cd '[:alnum:]_')"
+
+# --- VISAGE FLAG (ALWAYS INITIALIZE) ---
+VISAGE_FLAG=()
 
 # --- IMPORT MODULES ---
 # shellcheck source=state-management.sh
@@ -171,6 +178,8 @@ if ! $NO_INSTALL; then
     echo "Installing plugins..."
 
     # Find and install VST3
+        INSTALL_DIR="$HOME/Library/Audio/Plug-Ins/VST3"
+        mkdir -p "$INSTALL_DIR"
     VST3_BUNDLE="$(find "$BUILD_DIR" -name "${PLUGIN_NAME}.vst3" -type d | head -1)"
     if [[ -n "$VST3_BUNDLE" ]]; then
         VST3_DEST="$HOME/Library/Audio/Plug-Ins/VST3/${PLUGIN_NAME}.vst3"

@@ -714,35 +714,35 @@
           <div class="section-label">TONE</div>
           <div class="section-sub">BALANCE</div>
           <div class="knob" data-param="tone" data-min="0" data-max="10"><div class="ring"></div></div>
-          <div class="readout" data-readout="tone">5.0</div>
+          <input class="readout" data-readout="tone" type="number" min="0" max="10" step="0.1" value="5.0" />
         </div>
 
         <div class="knob-wrap">
           <div class="section-label">GLUE</div>
           <div class="section-sub">CONTROL</div>
           <div class="knob" data-param="glue" data-min="0" data-max="10"><div class="ring"></div></div>
-          <div class="readout" data-readout="glue">3.5</div>
+          <input class="readout" data-readout="glue" type="number" min="0" max="10" step="0.1" value="3.5" />
         </div>
 
         <div class="knob-wrap">
           <div class="section-label">WEIGHT</div>
           <div class="section-sub">LOW END</div>
           <div class="knob" data-param="weight" data-min="0" data-max="10"><div class="ring"></div></div>
-          <div class="readout" data-readout="weight">4.0</div>
+          <input class="readout" data-readout="weight" type="number" min="0" max="10" step="0.1" value="4.0" />
         </div>
 
         <div class="knob-wrap">
           <div class="section-label">AIR</div>
           <div class="section-sub">TOP END</div>
           <div class="knob" data-param="air" data-min="0" data-max="10"><div class="ring"></div></div>
-          <div class="readout" data-readout="air">5.0</div>
+          <input class="readout" data-readout="air" type="number" min="0" max="10" step="0.1" value="5.0" />
         </div>
 
         <div class="knob-wrap">
           <div class="section-label">WIDTH</div>
           <div class="section-sub">STEREO</div>
           <div class="knob" data-param="width" data-min="0" data-max="10"><div class="ring"></div></div>
-          <div class="readout" data-readout="width">4.5</div>
+          <input class="readout" data-readout="width" type="number" min="0" max="10" step="0.1" value="4.5" />
         </div>
 
         <div class="precision-rail">
@@ -767,7 +767,7 @@
             <div class="trim-stack">
               <div class="mini-label">TRIM</div>
               <div class="knob trim-knob" data-param="output_gain" data-min="-12" data-max="12"><div class="ring"></div></div>
-              <div class="readout trim-readout" data-readout="output_gain">+0.0 dB</div>
+              <input class="readout trim-readout" data-readout="output_gain" type="number" min="-12" max="12" step="0.1" value="0.0" />
             </div>
           </div>
           <div class="readout" id="output-readout">+0.0 dB</div>
@@ -776,7 +776,7 @@
           <div class="mix-module">
             <div class="mix-head">
               <div class="mini-label">MIX</div>
-              <div class="readout mix-readout" data-readout="mix">100%</div>
+              <input class="readout mix-readout" data-readout="mix" type="number" min="0" max="100" step="1" value="100" />
             </div>
             <div class="knob mix-knob" data-param="mix" data-min="0" data-max="100"><div class="ring"></div></div>
           </div>
@@ -795,6 +795,34 @@
   </div>
 
   <script>
+        // --- Numeric input sync for knobs ---
+        function setupKnobInputs() {
+          const knobParams = ['tone', 'glue', 'weight', 'air', 'width', 'output_gain', 'mix'];
+          knobParams.forEach(param => {
+            const input = document.querySelector(`input.readout[data-readout="${param}"]`);
+            const knob = document.querySelector(`.knob[data-param="${param}"]`);
+            if (!input || !knob) return;
+            // Update knob when input changes
+            input.addEventListener('change', (e) => {
+              let val = parseFloat(input.value);
+              const min = Number(input.min);
+              const max = Number(input.max);
+              if (isNaN(val)) val = min;
+              val = Math.max(min, Math.min(max, val));
+              input.value = val;
+              updateKnob(param, val);
+            });
+            // Update input when knob changes (override updateKnob)
+            const origUpdateKnob = updateKnob;
+            updateKnob = function(p, v, fromBackend) {
+              origUpdateKnob.apply(this, arguments);
+              if (p === param) input.value = v;
+            };
+          });
+        }
+
+      // Call setup after DOM is ready
+      window.addEventListener('DOMContentLoaded', setupKnobInputs);
     const values = {
       tone: 5.0,
       glue: 3.5,
