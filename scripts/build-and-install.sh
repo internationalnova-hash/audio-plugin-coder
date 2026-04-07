@@ -26,7 +26,6 @@ if [[ -z "$PLUGIN_NAME" ]]; then
 fi
 
 # Always initialize VISAGE_FLAG as an empty array to avoid unbound variable errors
-VISAGE_FLAG=()
 
 
 # --- PATH RESOLUTION ---
@@ -58,6 +57,12 @@ fi
 echo "--- APC BUILDER: $PLUGIN_NAME ---"
 if $USE_VISAGE; then
     echo "Framework: visage"
+fi
+
+# --- AUTO-COPY LATEST UI (WebView) ---
+if [[ -f "$PLUGIN_DIR/Design/v1-test.html" && -d "$PLUGIN_DIR/Source/ui/public" ]]; then
+    echo "Copying latest UI: $PLUGIN_DIR/Design/v1-test.html -> $PLUGIN_DIR/Source/ui/public/index.html"
+    cp "$PLUGIN_DIR/Design/v1-test.html" "$PLUGIN_DIR/Source/ui/public/index.html"
 fi
 
 # --- VALIDATE PREREQUISITES ---
