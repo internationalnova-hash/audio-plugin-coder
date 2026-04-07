@@ -4,6 +4,8 @@
 #
 # Usage: bash scripts/build-and-install.sh <PluginName> [--no-install] [--skip-tests]
 
+VISAGE_FLAG=()
+
 set -euo pipefail
 
 # --- PARSE ARGUMENTS ---
