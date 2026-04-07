@@ -1,7 +1,6 @@
-env:
 name: Build & Publish Plugin
 
-  BUILD_TYPE: Release
+
   push:
     tags:
       - 'space-by-nova-macos-v*'
@@ -52,9 +51,8 @@ name: Build & Publish Plugin
         default: false
         type: boolean
 
-env:
-
 jobs:
+  BUILD_TYPE: Release
   # ============================================
   # RESOLVE PLUGIN MATRIX
   # ============================================
