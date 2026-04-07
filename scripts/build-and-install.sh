@@ -119,7 +119,7 @@ CONFIG_OUTPUT=$(cmake -S "$ROOT_PATH" -B "$BUILD_DIR" \
     -G "$CMAKE_GENERATOR" \
     --fresh \
     "${PLATFORM_CONFIG_ARGS[@]}" \
-    "${VISAGE_FLAG[@]}" 2>&1) || {
+    "${VISAGE_FLAG[@]:-}" 2>&1) || {
     echo "ERROR: CMake configuration failed" >&2
     echo "$CONFIG_OUTPUT" >&2
 
