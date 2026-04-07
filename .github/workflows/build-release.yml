@@ -1,3 +1,82 @@
+                        - name: Diff UI files (Nova Master)
+                          if: matrix.plugin == 'Nova Master'
+                          run: |
+                            diff -u "plugins/Nova Master/Design/v1-test.html" "plugins/Nova Master/Source/ui/public/index.html" || true
+
+                        - name: Diff UI files (Nova Tone)
+                          if: matrix.plugin == 'Nova Tone'
+                          run: |
+                            diff -u "plugins/Nova Tone/Design/v1-test.html" "plugins/Nova Tone/Source/ui/public/index.html" || true
+
+                        - name: Diff UI files (Nova Heat)
+                          if: matrix.plugin == 'Nova Heat'
+                          run: |
+                            diff -u "plugins/Nova Heat/Design/v1-test.html" "plugins/Nova Heat/Source/ui/public/index.html" || true
+
+                        - name: Diff UI files (CloudWash)
+                          if: matrix.plugin == 'CloudWash'
+                          run: |
+                            diff -u "plugins/CloudWash/Design/v5-test.html" "plugins/CloudWash/Source/ui/public/index.html" || true
+
+                        - name: Diff UI files (gnarly2)
+                          if: matrix.plugin == 'gnarly2'
+                          run: |
+                            diff -u "plugins/gnarly2/Design/v4-test.html" "plugins/gnarly2/Source/ui/public/index.html" || true
+
+                        - name: Diff UI files (nf_gnarly)
+                          if: matrix.plugin == 'nf_gnarly'
+                          run: |
+                            diff -u "plugins/nf_gnarly/Design/v3-test.html" "plugins/nf_gnarly/Source/ui/public/index.html" || true
+
+                        - name: Diff UI files (Space By Nova)
+                          if: matrix.plugin == 'Space By Nova'
+                          run: |
+                            diff -u "plugins/Space By Nova/Design/v1-test.html" "plugins/Space By Nova/Source/ui/public/index.html" || true
+                  - name: Diff UI files (Nova Comp)
+                    if: matrix.plugin == 'Nova Comp'
+                    run: |
+                      echo "===NOVA COMP UI DIFF==="
+                      diff -u "plugins/Nova Comp/Design/v3-test.html" "plugins/Nova Comp/Source/ui/public/index.html" || true
+                      echo "===END NOVA COMP UI DIFF==="
+                      echo "(Above: diff between v3-test.html and index.html for Nova Comp)"
+            - name: Verify copied UI (Nova Comp)
+              if: matrix.plugin == 'Nova Comp'
+              run: |
+                head -20 "plugins/Nova Comp/Source/ui/public/index.html"
+
+            - name: Verify copied UI (Nova Master)
+              if: matrix.plugin == 'Nova Master'
+              run: |
+                head -20 "plugins/Nova Master/Source/ui/public/index.html"
+      - name: Copy latest UI (Nova Tone only)
+        if: matrix.plugin == 'Nova Tone'
+        run: |
+          cp "plugins/Nova Tone/Design/v1-test.html" "plugins/Nova Tone/Source/ui/public/index.html"
+
+      - name: Copy latest UI (Nova Heat only)
+        if: matrix.plugin == 'Nova Heat'
+        run: |
+          cp "plugins/Nova Heat/Design/v1-test.html" "plugins/Nova Heat/Source/ui/public/index.html"
+
+      - name: Copy latest UI (CloudWash only)
+        if: matrix.plugin == 'CloudWash'
+        run: |
+          cp "plugins/CloudWash/Design/v5-test.html" "plugins/CloudWash/Source/ui/public/index.html"
+
+      - name: Copy latest UI (gnarly2 only)
+        if: matrix.plugin == 'gnarly2'
+        run: |
+          cp "plugins/gnarly2/Design/v4-test.html" "plugins/gnarly2/Source/ui/public/index.html"
+
+      - name: Copy latest UI (nf_gnarly only)
+        if: matrix.plugin == 'nf_gnarly'
+        run: |
+          cp "plugins/nf_gnarly/Design/v3-test.html" "plugins/nf_gnarly/Source/ui/public/index.html"
+
+      - name: Copy latest UI (Space By Nova only)
+        if: matrix.plugin == 'Space By Nova'
+        run: |
+          cp "plugins/Space By Nova/Design/v1-test.html" "plugins/Space By Nova/Source/ui/public/index.html"
 name: Build & Publish Plugin
 
 on:
@@ -23,6 +102,7 @@ on:
           - Nova Heat
           - Nova Comp
           - Nova Master
+          - Nova Level
           - all
       platforms:
         description: 'Which platforms to build?'
@@ -151,8 +231,24 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+
       - name: Install Dependencies
         run: brew install cmake || true
+
+      - name: Clean build directory (force rebuild)
+        run: |
+          rm -rf build
+
+
+      - name: Copy latest UI (Nova Master only)
+        if: matrix.plugin == 'Nova Master'
+        run: |
+          cp "plugins/Nova Master/Design/v1-test.html" "plugins/Nova Master/Source/ui/public/index.html"
+
+      - name: Copy latest UI (Nova Comp only)
+        if: matrix.plugin == 'Nova Comp'
+        run: |
+          cp "plugins/Nova Comp/Design/v3-test.html" "plugins/Nova Comp/Source/ui/public/index.html"
 
       - name: Detect signing configuration
         id: mac_signing
