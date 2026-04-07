@@ -1,3 +1,4 @@
+# Trigger UI refresh for workflow_dispatch (GitHub cache workaround)
 name: Build & Publish Plugin
 
 
@@ -61,61 +62,62 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Set plugin matrix
-        id: set-matrix
-        run: |
-          if [ "${{ github.event_name }}" == "push" ]; then
-            if [[ "${GITHUB_REF_NAME}" == nova-heat-macos-v* ]]; then
-              echo 'matrix={"plugin":["Nova Heat"]}' >> $GITHUB_OUTPUT
-            elif [[ "${GITHUB_REF_NAME}" == nova-tone-macos-v* ]]; then
-              echo 'matrix={"plugin":["Nova Tone"]}' >> $GITHUB_OUTPUT
-            elif [[ "${GITHUB_REF_NAME}" == nova-level-macos-v* ]]; then
-              echo 'matrix={"plugin":["Nova Comp"]}' >> $GITHUB_OUTPUT
-            elif [[ "${GITHUB_REF_NAME}" == nova-master-macos-v* ]]; then
-              echo 'matrix={"plugin":["Nova Master"]}' >> $GITHUB_OUTPUT
-            else
-              echo 'matrix={"plugin":["Space By Nova"]}' >> $GITHUB_OUTPUT
-            fi
-          elif [ "${{ inputs.plugin }}" == "all" ]; then
-            echo 'matrix={"plugin":["CloudWash","gnarly2","nf_gnarly","Space By Nova","Nova Tone","Nova Heat","Nova Comp","Nova Master"]}' >> $GITHUB_OUTPUT
-          else
-            echo 'matrix={"plugin":["${{ inputs.plugin }}"]}' >> $GITHUB_OUTPUT
-          fi
-
-  # ============================================
-  # WINDOWS BUILD
-  # ============================================
-  build-windows:
-    needs: setup
-    if: inputs.platforms == 'all' || inputs.platforms == 'windows'
-    runs-on: windows-latest
-    strategy:
-      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
-      fail-fast: false
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-        with:
-          submodules: recursive
-          fetch-depth: 0
-
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Configure CMake
-        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
-
-      - name: Build VST3
-        shell: pwsh
-        run: |
           $target = ('${{ matrix.plugin }}' -replace '[^A-Za-z0-9_]', '')
-          cmake --build build --config Release --target "${target}_VST3"
+      name: Build & Publish Plugin
 
-      - name: Build Standalone
-        shell: pwsh
-        run: |
-          $target = ('${{ matrix.plugin }}' -replace '[^A-Za-z0-9_]', '')
           cmake --build build --config Release --target "${target}_Standalone"
+        push:
+          tags:
+            - 'space-by-nova-macos-v*'
+            - 'nova-tone-macos-v*'
+            - 'nova-heat-macos-v*'
+            - 'nova-level-macos-v*'
+            - 'nova-master-macos-v*'
+        workflow_dispatch:
+          inputs:
+            plugin:
+              description: 'Which plugin to build?'
+              required: true
+              type: choice
+              options:
+                - CloudWash
+                - gnarly2
+                - nf_gnarly
+                - Space By Nova
+                - Nova Tone
+                - Nova Heat
+                - Nova Comp
+                - Nova Master
+                - Nova Level
+                - all
+            platforms:
+              description: 'Which platforms to build?'
+              required: true
+              default: 'all'
+              type: choice
+              options:
+                - all
+                - windows
+                - macos
+                - linux
+            macos_vst3:
+              description: 'macOS: Build VST3?'
+              required: false
+              default: true
+              type: boolean
+            macos_au:
+              description: 'macOS: Build AU?'
+              required: false
+              default: true
+              type: boolean
+            macos_standalone:
+              description: 'macOS: Build Standalone?'
+              required: false
+              default: false
+              type: boolean
+
+
+        BUILD_TYPE: Release
 
       - name: Collect artifacts
         shell: bash
